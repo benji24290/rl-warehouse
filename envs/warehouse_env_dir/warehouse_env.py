@@ -17,7 +17,7 @@ class Article():
 
 
 class Request():
-    def __init__(self):
+    def __init__(self, article):
         # the reward value of this request
         # float 0-1
         self.reward_value = 1
@@ -26,7 +26,11 @@ class Request():
         self.time = 5
         # the article type gets random article
         # Article
-        self.article = None
+        self.article = article
+
+    def __str__(self):
+        return "{} in {} with reward: {}".format(
+            self.article.name, self.time, self.reward_value)
 
 
 class WarehouseEnv(gym.Env):
@@ -36,7 +40,11 @@ class WarehouseEnv(gym.Env):
         self.max_arrivals = max_arrivals
         if seed is None:
             self.seed = random.randint(0, sys.maxsize)
+        self.possible_articles = []
+        self.requests = []
+        self.stock = []
         print('Env initialized seed:', self.seed)
+        self._add_articles()
 
     def step(self):
         self._new_request()
@@ -45,5 +53,26 @@ class WarehouseEnv(gym.Env):
     def reset(self):
         print('env reset')
 
+    # generates a new
     def _new_request(self):
-        pass
+        # TODO pick random but with frequency and check for max_request
+        self.requests.append(Request(random.choice(self.possible_articles)))
+
+    def _print_env_info(self):
+        self._print_requests()
+
+    def _print_requests(self):
+        print("------- Requests -------")
+        for obj in self.requests:
+            print(obj)
+
+    def _add_articles(self):
+        self.possible_articles.append(
+            Article(0.2, 0.2, "Selten und unverfügbar"))
+        self.possible_articles.append(
+            Article(0.8, 0.2, "Häufig und unverfügbar"))
+        self.possible_articles.append(
+            Article(0.2, 0.8, "Selten und verfügbar"))
+        self.possible_articles.append(
+            Article(0.8, 0.8, "Häufig und verfügbar"))
+        print("Articles added...")
