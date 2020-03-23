@@ -6,14 +6,43 @@ import sys
 class Article():
     # frequency is the probability that an article of this type is requested
     # float 0-1
-    # availability of this article, between 0-1 smaller availability takes longer to get delivered to the warehouse
-    # float 0-1
     # name of this article
     # string
-    def __init__(self, frequency=0.5, availability=0.5, name="article name"):
+    # delivery time of this article, between 0-1 smaller availability takes longer to get delivered to the warehouse
+    # int
+    def __init__(self, frequency=0.5, name="article name", delivery_time=2):
         self.frequency = frequency
-        self.availability = availability
         self.name = name
+        self.delivery_time = delivery_time
+
+
+class StorageSpace():
+    def __init__(self, distance, article=None):
+        # the distance
+        # int [1,2,3]
+        self.distance = distance
+        # the stored article
+        # Article
+        self.article = article
+
+    def store_article(self, article):
+        self.article = article
+
+    def retrieve_article(self):
+        self.article = None
+
+
+class ArrivalSpace():
+    def __init__(self, article=None):
+        # the stored article
+        # Article
+        self.article = article
+
+    def store_article(self, article):
+        self.article = article
+
+    def retrieve_article(self):
+        self.article = None
 
 
 class Request():
@@ -53,7 +82,7 @@ class WarehouseEnv(gym.Env):
     def reset(self):
         print('env reset')
 
-    # generates a new
+    # generates a new request
     def _new_request(self):
         # TODO pick random but with frequency and check for max_request
         self.requests.append(Request(random.choice(self.possible_articles)))
@@ -68,11 +97,14 @@ class WarehouseEnv(gym.Env):
 
     def _add_articles(self):
         self.possible_articles.append(
-            Article(0.2, 0.2, "Selten und unverfügbar"))
+            Article(0.2, "Selten"))
         self.possible_articles.append(
-            Article(0.8, 0.2, "Häufig und unverfügbar"))
+            Article(0.8,  "Häufig"))
         self.possible_articles.append(
-            Article(0.2, 0.8, "Selten und verfügbar"))
-        self.possible_articles.append(
-            Article(0.8, 0.8, "Häufig und verfügbar"))
+            Article(0.5,  "Normal"))
         print("Articles added...")
+
+    def _add_storage_space(self):
+        self.stock.append(StorageSpace(1))
+        self.stock.append(StorageSpace(2))
+        self.stock.append(StorageSpace(3))
