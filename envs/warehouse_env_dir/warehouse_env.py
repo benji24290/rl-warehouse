@@ -31,6 +31,33 @@ class StorageSpace():
     def retrieve_article(self):
         self.article = None
 
+    def get_storage_space_state(self):
+        # TODO return storage space info
+        pass
+
+
+class Storage():
+    def __init__(self, count=3):
+        self.storage_spaces = self._init_spaces(count)
+
+    def _init_spaces(self, count):
+        # TODO dynamic size
+        return [StorageSpace(1), StorageSpace(2), StorageSpace(3)]
+
+    def get_possible_space(self):
+        # TODO return random possible space
+        pass
+
+    def get_storage_state(self):
+        # TODO return all states as....
+        return self.storage_spaces
+
+
+class Arrivals():
+    def __init__(self, count=1):
+        self.arrivals = []
+        pass
+
 
 class ArrivalSpace():
     def __init__(self, article=None):
@@ -60,6 +87,20 @@ class Request():
     def __str__(self):
         return "{} in {} with reward: {}".format(
             self.article.name, self.time, self.reward_value)
+
+
+class Requests():
+    def __init__(self, count=2):
+        self.requests = []
+        pass
+
+    def generate_request(self):
+        # TODO generate a request with prob.
+        pass
+
+    def get_requests_state(self):
+        # TODO return all states as....
+        pass
 
 
 class WarehouseEnv(gym.Env):
