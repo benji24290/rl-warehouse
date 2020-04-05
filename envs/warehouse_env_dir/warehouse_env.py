@@ -1,6 +1,8 @@
 import gym
 import random
 import sys
+import json
+import itertools
 
 
 class Article():
@@ -22,16 +24,36 @@ class Article():
     def getId(self):
         return self.id
 
+    def __str__(self):
+        return json.dumps(self.__dict__)
+
 
 class ArticleCollection():
     def __init__(self):
+        # TODO dynamic count
         self.articles = []
+        self._generate_articles()
 
     def _generate_articles(self):
-        pass
+        self.articles.append(
+            Article(1, 0.2, "Selten"))
+        self.articles.append(
+            Article(2, 0.8,  "Häufig"))
+        self.articles.append(
+            Article(3, 0.5,  "Normal"))
+        print("Possible articles added")
 
     def get_possible_articles(self):
-        return self.articles
+        possible = []
+        for a in self.articles:
+            possible.append(a.getId())
+        return possible
+
+    def __str__(self):
+        possible = []
+        for a in self.articles:
+            possible.append(a)
+        return ', '.join(map(str, possible))
 
 
 class StorageSpace():
@@ -55,15 +77,19 @@ class StorageSpace():
             return 0
         return self.article.getId()
 
+    def __str__(self):
+        if self.article == None:
+            return "{}"
+        return self.article.__str__()
+
 
 class Storage():
     def __init__(self, count=3):
         self.storage_spaces = self._init_spaces(count)
-        print('Initialized Storage', self.get_storage_state())
-        print(self._is_space_empty(-2))
+        print('Initialized storage', self.get_storage_state())
 
     def _init_spaces(self, count):
-        # TODO dynamic size
+        # TODO dynamic size see articles
         return [StorageSpace(1), StorageSpace(2), StorageSpace(3)]
 
     def get_possible_space(self):
@@ -88,16 +114,32 @@ class Storage():
         except IndexError:
             return False
 
+    def __str__(self):
+        spaces = []
+        for s in self.storage_spaces:
+            spaces.append(s)
+        return ', '.join(map(str, spaces))
+
 
 class Arrivals():
     def __init__(self, count=1):
         self.max_arrivals = count
         self.arrivals = []
-        pass
+        self._initialize_spaces(self.max_arrivals)
+        print('Initialized arrivals', self.get_arrivals_state())
+
+    def _initialize_spaces(self, count):
+        for _ in itertools.repeat(None, count):
+            self.arrivals.append(ArrivalSpace())
 
     def add_article_to_arrival(self, article):
-        # TODO
-        print(self.arrivals, 3, self.max_arrivals)
+        pass
+
+    def get_arrivals_state(self):
+        state = []
+        for a in self.arrivals:
+            state.append(a.get_arrival_space_state())
+        return state
 
 
 class ArrivalSpace():
@@ -111,6 +153,12 @@ class ArrivalSpace():
 
     def retrieve_article(self):
         self.article = None
+
+    def get_arrival_space_state(self):
+        # TODO return storage space info
+        if self.article == None:
+            return 0
+        return self.article.getId()
 
 
 class Request():
@@ -129,69 +177,85 @@ class Request():
         return "{} in {} with reward: {}".format(
             self.article.name, self.time, self.reward_value)
 
+    def get_request_state(self):
+        return [self.article.getId(), self.time, self.reward_value]
+
 
 class Requests():
     def __init__(self, count=2):
         self.requests = []
         pass
 
-    def generate_request(self):
+    def generate_request(self, possible_articles):
         # TODO generate a request with prob.
-        pass
+        # TODO check if max req not reched
+        self.requests.append(
+            Request(random.choice(possible_articles.articles)))
 
     def get_requests_state(self):
         # TODO return all states as....
-        pass
+        state = []
+        for r in self.requests:
+            state.append(r.get_request_state())
+        return state
 
-
-class WarehouseEnv(gym.Env):
-    def __init__(self, seed=None, max_requests=3, max_arrivals=1):
-        self.seed = seed
-        self.max_requests = max_requests
-        self.max_arrivals = max_arrivals
-        if seed is None:
-            self.seed = random.randint(0, sys.maxsize)
-        self.arrivals = Arrivals(self.max_arrivals)
-        self.possible_articles = []
-        self.requests = []
-        self.storage = Storage(3)
-        print('Env initialized seed:', self.seed)
-        self._add_articles()
-        #self.storage.store(Article(3, 0.5,  "Normal"), 1)
-        # print(self.storage.get_storage_state())
-
-    def step(self):
-        self._new_request()
-        print('Step success!')
-
-    def reset(self):
-        print('env reset')
-
-    # generates a new request
-    def _new_request(self):
-        # TODO pick random but with frequency and check for max_request
-        self.requests.append(Request(random.choice(self.possible_articles)))
-
-    def _print_env_info(self):
-        self._print_requests()
+    def __str__(self):
+        reqs = []
+        for r in self.requests:
+            reqs.append(r)
+        return ', '.join(map(str, reqs))
 
     def _print_requests(self):
         print("------- Requests -------")
         for obj in self.requests:
             print(obj)
 
-    def _add_articles(self):
-        self.possible_articles.append(
-            Article(1, 0.2, "Selten"))
-        self.possible_articles.append(
-            Article(2, 0.8,  "Häufig"))
-        self.possible_articles.append(
-            Article(3, 0.5,  "Normal"))
-        print("Articles added...")
-    # def _add_storage_space(self):
-    #   self.stock.append(StorageSpace(1))
-    #   self.stock.append(StorageSpace(2))
-    #   self.stock.append(StorageSpace(3))
+
+class WarehouseEnv(gym.Env):
+    def __init__(self, seed=None, max_requests=2, max_arrivals=1):
+        self.seed = seed
+        self.max_requests = max_requests
+        self.max_arrivals = max_arrivals
+        if seed is None:
+            self.seed = random.randint(0, sys.maxsize)
+        print('Env initialized seed:', self.seed)
+        self._make_new_instances()
+        self._add_test_values()
+        self._print_env_state()
+
+    def step(self):
+        self.requests.generate_request(self.possible_articles)
+        print('Step success!')
+
+    def reset(self):
+        self._make_new_instances
+        print('env reset')
+
+    def _print_env_info(self):
+        print(self.storage)
+        print(self.possible_articles.get_possible_articles())
+        print(self.possible_articles)
+        print(self.requests)
+
+    def _print_env_state(self):
+        print(self.storage.get_storage_state())
+        print(self.requests.get_requests_state())
+        print(self.arrivals.get_arrivals_state())
+
+    def _make_new_instances(self):
+        self.arrivals = Arrivals(self.max_arrivals)
+        self.possible_articles = ArticleCollection()
+        self.requests = Requests(self.max_requests)
+        self.storage = Storage(3)
+
+    def _add_test_values(self):
+        # Storage article
+        self.storage.store(Article(3, 0.5,  "Normal"), 2)
+        # New request
+        self.requests.generate_request(self.possible_articles)
+        self.requests.generate_request(self.possible_articles)
+        # New element in arrival
+        self.arrivals.add_article_to_arrival(Article(2, 0.5,  "Normal"))
 
 
-a = WarehouseEnv(None, 3, 1)
+a = WarehouseEnv(None, 2, 3)
