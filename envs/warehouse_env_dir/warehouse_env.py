@@ -1,9 +1,14 @@
-import gym
+
 import random
 import sys
 import json
 import itertools
+import gym
+import numpy as np
+import matplotlib.pyplot as plt
 
+
+# TODO Add docstrings
 
 class Article():
     # frequency is the probability that an article of this type is requested
@@ -193,6 +198,7 @@ class Requests():
             Request(random.choice(possible_articles.articles)))
 
     def get_requests_state(self):
+        """Docstring"""
         # TODO return all states as....
         state = []
         for r in self.requests:
@@ -212,10 +218,13 @@ class Requests():
 
 
 class WarehouseEnv(gym.Env):
-    def __init__(self, seed=None, max_requests=2, max_arrivals=1):
+    def __init__(self, seed=None, max_requests=2, max_arrivals=1, max_turns=50):
         self.seed = seed
         self.max_requests = max_requests
         self.max_arrivals = max_arrivals
+        self.max_turns = max_turns
+        self.turn = 0
+        self.game_over = False
         if seed is None:
             self.seed = random.randint(0, sys.maxsize)
         print('Env initialized seed:', self.seed)
@@ -224,12 +233,32 @@ class WarehouseEnv(gym.Env):
         self._print_env_state()
 
     def step(self):
-        self.requests.generate_request(self.possible_articles)
-        print('Step success!')
+        if self.turn < self.max_turns:
+            self.requests.generate_request(self.possible_articles)
+            print('Step ', self.turn)
+            # TODO calc state and reward
+            resulting_state = []
+            self.turn += 1
+            reward = 0
+            # state, reward, gameover, debug info
+        else:
+            print('Finished!')
+            # TODO calc state and reward
+            resulting_state = []
+            reward = 0
+            self.game_over = True
+            # state, reward, gameover, debug info
+        return resulting_state, reward, self.game_over, None
 
     def reset(self):
+        self.game_over = False
+        self.turn = 0
         self._make_new_instances
         print('env reset')
+
+    def render(self):
+        # TODO render
+        pass
 
     def _print_env_info(self):
         print(self.storage)
@@ -241,6 +270,10 @@ class WarehouseEnv(gym.Env):
         print(self.storage.get_storage_state())
         print(self.requests.get_requests_state())
         print(self.arrivals.get_arrivals_state())
+
+    def getState(self):
+        # TODO return all states including turn?
+        return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
 
     def _make_new_instances(self):
         self.arrivals = Arrivals(self.max_arrivals)
@@ -258,4 +291,41 @@ class WarehouseEnv(gym.Env):
         self.arrivals.add_article_to_arrival(Article(2, 0.5,  "Normal"))
 
 
-a = WarehouseEnv(None, 2, 3)
+#a = WarehouseEnv(None, 2, 3, 50)
+
+# Q Function
+if __name__ == '__main__':
+    env = WarehouseEnv(None, 2, 3, 50)
+
+    ALPHA = 0.1
+    GAMMA = 1.0
+    EPS = 1.0
+    # TODO init q here
+    #Q = {}
+    # for state in env.stateSpacePlus:
+    #    for action in env.possible_articles:
+    #        Q[state, action] = 0
+
+    # TODO rename to episodes
+    num_games = 100
+    total_rewards = np.zeros(num_games)
+
+    for i in range(num_games):
+        # Print all n games
+        if i % 10 == 0:
+            print('starting episode', i)
+        done = False
+        ep_rewards = 0
+        # TODO Return something in env.reset
+        #observation = env.reset()
+        env.reset()
+        while not done:
+            # TODO seed?
+            rand = np.random.random()
+            print(rand)
+            #action = max_action(Q, observation, env.possible_actions)
+            env.step()
+            if env.game_over:
+                break
+
+# DQN
