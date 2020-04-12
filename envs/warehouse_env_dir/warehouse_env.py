@@ -8,7 +8,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+# This reward values are the constant part and will be modified with distance
+ORDER_POSITIVE_REWARD = 10
+ORDER_NEGATIVE_REWARD = -50
+STORE_POSITIVE_REWARD = 10
+STORE_NEGATIVE_REWARD = -10
+DELIVER_POSITIVE_REWARD = 100
+DELIVER_NEGATIVE_REWARD = -100
+INVENTORY_COST_FACTOR = 1
+
 # TODO Add docstrings
+
 
 class Article():
     # frequency is the probability that an article of this type is requested
@@ -53,6 +63,9 @@ class ArticleCollection():
         for a in self.articles:
             possible.append(a.getId())
         return possible
+
+    def get_random_article(self):
+        return random.choice(self.articles)
 
     def __str__(self):
         possible = []
@@ -138,7 +151,10 @@ class Arrivals():
             self.arrivals.append(ArrivalSpace())
 
     def add_article_to_arrival(self, article):
-        pass
+        for space in self.arrivals:
+            if space.store_article(article):
+                return True
+        return False
 
     def get_arrivals_state(self):
         state = []
@@ -154,7 +170,10 @@ class ArrivalSpace():
         self.article = article
 
     def store_article(self, article):
-        self.article = article
+        if self.article == None:
+            self.article = article
+            return True
+        return False
 
     def retrieve_article(self):
         self.article = None
@@ -189,7 +208,6 @@ class Request():
 class Requests():
     def __init__(self, count=2):
         self.requests = []
-        pass
 
     def generate_request(self, possible_articles):
         # TODO generate a request with prob.
@@ -217,6 +235,99 @@ class Requests():
             print(obj)
 
 
+class Order():
+    def __init__(self, article):
+        self.article = article
+        self.time_to_deliver = article.delivery_time
+
+    def has_arrived(self):
+        print('time is: ', self.time_to_deliver)
+        if self.time_to_deliver > 0:
+            return False
+        return True
+
+    def decrease_time(self):
+        self.time_to_deliver -= 1
+
+    def __str__(self):
+        return self.article, ' in ', self.time_to_deliver
+
+
+class Orders():
+    def __init__(self):
+        self.orders = []
+
+    def new_order(self, article):
+        self.orders.append(Order(article))
+
+    def update_orders(self):
+        arrived_articles = []
+        for o in self.orders:
+            o.decrease_time()
+            if o.has_arrived():
+                arrived_articles.append(o.article)
+                self.orders.remove(o)
+        return arrived_articles
+
+
+class Actions():
+    def __init__(self, env):
+        self.actions = ['STORE', 'DELIVER', 'ORDER']
+        # TODO make custom class for orders
+        self.orders = Orders()
+        self.env = env
+        self.action_reward = 0
+
+    def store(self):
+        # TODO store
+        print('store')
+        return 10
+
+    def deliver(self):
+        # TODO deliver
+        # TODO deliver with oracle
+        print('deliver')
+        if True:
+            return 100
+        return -100
+
+    def order(self):
+        # TODO order specific aticle
+        self.orders.new_order(self.env.possible_articles.get_random_article())
+        print('order, now there ', len(self.orders.orders), ' orders')
+        return 0
+
+    def do_action(self, action):
+        self.action_reward = 0
+        #print('arrived ', len(self.orders.update_orders()), ' orders')
+        self.action_reward += self.handle_arrivals(self.orders.update_orders())
+        if action == 'STORE':
+            return self.store()+self.action_reward
+        elif action == 'DELIVER':
+            return self.deliver()+self.action_reward
+        elif action == 'ORDER':
+            return self.order()+self.action_reward
+
+    def handle_arrivals(self, arrived_articles):
+        arrival_reward = 0
+        for a in arrived_articles:
+            if self.env.arrivals.add_article_to_arrival(a):
+                print('Stored article', self.env.arrivals.get_arrivals_state())
+                arrival_reward += ORDER_POSITIVE_REWARD
+            else:
+                arrival_reward += ORDER_NEGATIVE_REWARD
+                print('full')
+        print('arrival reward is ', arrival_reward)
+        return arrival_reward
+
+    def action_random(self):
+        return self.do_action(random.choice(self.actions))
+
+    def calc_reward(self):
+        # TODO
+        return 0
+
+
 class WarehouseEnv(gym.Env):
     def __init__(self, seed=None, max_requests=2, max_arrivals=1, max_turns=50):
         self.seed = seed
@@ -235,11 +346,12 @@ class WarehouseEnv(gym.Env):
     def step(self):
         if self.turn < self.max_turns:
             self.requests.generate_request(self.possible_articles)
+            reward = self.actions.action_random()
             print('Step ', self.turn)
             # TODO calc state and reward
             resulting_state = []
             self.turn += 1
-            reward = 0
+
             # state, reward, gameover, debug info
         else:
             print('Finished!')
@@ -253,7 +365,7 @@ class WarehouseEnv(gym.Env):
     def reset(self):
         self.game_over = False
         self.turn = 0
-        self._make_new_instances
+        self._make_new_instances()
         print('env reset')
 
     def render(self):
@@ -280,6 +392,7 @@ class WarehouseEnv(gym.Env):
         self.possible_articles = ArticleCollection()
         self.requests = Requests(self.max_requests)
         self.storage = Storage(3)
+        self.actions = Actions(self)
 
     def _add_test_values(self):
         # Storage article
@@ -307,11 +420,11 @@ if __name__ == '__main__':
     #        Q[state, action] = 0
 
     # TODO rename to episodes
-    num_games = 100
-    total_rewards = np.zeros(num_games)
+    num_ep = 100
+    total_rewards = np.zeros(num_ep)
 
-    for i in range(num_games):
-        # Print all n games
+    for i in range(num_ep):
+        # Print all n episodes
         if i % 10 == 0:
             print('starting episode', i)
         done = False
@@ -322,10 +435,11 @@ if __name__ == '__main__':
         while not done:
             # TODO seed?
             rand = np.random.random()
-            print(rand)
             #action = max_action(Q, observation, env.possible_actions)
-            env.step()
+            [state, reward, game_over, debug] = env.step()
+            ep_rewards = ep_rewards + reward
             if env.game_over:
                 break
+        print('Episode ', i, ' reward is:', ep_rewards)
 
 # DQN
