@@ -1,6 +1,6 @@
 # rl-warehouse
 
-Reainforcement Learning Warehouse
+Reinforcement Learning Warehouse
 
 ## Install Requirements
 
