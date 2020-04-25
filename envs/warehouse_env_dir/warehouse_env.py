@@ -33,10 +33,10 @@ class Article():
         self.name = name
         self.delivery_time = delivery_time
 
-    def getName(self):
+    def get_name(self):
         return self.name
 
-    def getId(self):
+    def get_id(self):
         return self.id
 
     def __str__(self):
@@ -51,21 +51,27 @@ class ArticleCollection():
 
     def _generate_articles(self):
         self.articles.append(
-            Article(1, 0.2, "Selten"))
+            Article(0, 0.2, "Selten"))
         self.articles.append(
-            Article(2, 0.8,  "Häufig"))
+            Article(1, 0.8,  "Häufig"))
         self.articles.append(
-            Article(3, 0.5,  "Normal"))
-        print("Possible articles added")
+            Article(2, 0.5,  "Normal"))
+        log.info("Possible articles added")
 
     def get_possible_articles(self):
         possible = []
         for a in self.articles:
-            possible.append(a.getId())
+            possible.append(a.get_id())
         return possible
 
     def get_random_article(self):
         return random.choice(self.articles)
+
+    def get_article_by_id(self, id):
+        for a in self.articles:
+            if(a.get_id() == id):
+                return a
+        return None
 
     def __str__(self):
         possible = []
@@ -93,7 +99,7 @@ class StorageSpace():
         # TODO return storage space info
         if self.article == None:
             return 0
-        return self.article.getId()
+        return self.article.get_id()
 
     def __str__(self):
         if self.article == None:
@@ -104,7 +110,7 @@ class StorageSpace():
 class Storage():
     def __init__(self, count=3):
         self.storage_spaces = self._init_spaces(count)
-        print('Initialized storage', self.get_storage_state())
+        log.info('Initialized storage', self.get_storage_state())
 
     def _init_spaces(self, count):
         # TODO dynamic size see articles
@@ -113,6 +119,14 @@ class Storage():
     def get_possible_space(self):
         # TODO return random possible space
         pass
+
+    def get_possible_spaces(self):
+        '''Returns the index of all the possible spaces'''
+        spaces = []
+        for i in range(len(self.storage_spaces)):
+            if(self.storage_spaces[i].article == None):
+                spaces.append(i)
+        return spaces
 
     def get_storage_state(self):
         # TODO return all states as....
@@ -124,7 +138,8 @@ class Storage():
     def store(self, article, pos):
         if self._is_space_empty(pos):
             self.storage_spaces[pos].store_article(article)
-        # TODO throw error
+            return True
+        return False
 
     def _is_space_empty(self, pos):
         try:
@@ -144,7 +159,7 @@ class Arrivals():
         self.max_arrivals = count
         self.arrivals = []
         self._initialize_spaces(self.max_arrivals)
-        print('Initialized arrivals', self.get_arrivals_state())
+        log.info('Initialized arrivals', self.get_arrivals_state())
 
     def _initialize_spaces(self, count):
         for _ in itertools.repeat(None, count):
@@ -155,6 +170,12 @@ class Arrivals():
             if space.store_article(article):
                 return True
         return False
+
+    def remove_article_from_arrival(self, article):
+        for a in self.arrivals:
+            if a.article == article:
+                return a.retrieve_article()
+        return None
 
     def get_arrivals_state(self):
         state = []
@@ -176,13 +197,15 @@ class ArrivalSpace():
         return False
 
     def retrieve_article(self):
+        a = self.article
         self.article = None
+        return a
 
     def get_arrival_space_state(self):
         # TODO return storage space info
         if self.article == None:
             return 0
-        return self.article.getId()
+        return self.article.get_id()
 
 
 class Request():
@@ -202,18 +225,32 @@ class Request():
             self.article.name, self.time, self.reward_value)
 
     def get_request_state(self):
-        return [self.article.getId(), self.time, self.reward_value]
+        return [self.article.get_id(), self.time, self.reward_value]
 
 
 class Requests():
     def __init__(self, count=2):
+        self.max_requests = count
         self.requests = []
+
+    def deliver_article(self, article):
+        # TODO every request has same
+        if article is not None:
+            for r in self.requests:
+                if r.article == article:
+                    self.requests.remove(r)
+                    return True
+        return False
 
     def generate_request(self, possible_articles):
         # TODO generate a request with prob.
         # TODO check if max req not reched
-        self.requests.append(
-            Request(random.choice(possible_articles.articles)))
+        if(len(self.requests) < self.max_requests):
+            self.requests.append(
+                Request(random.choice(possible_articles.articles)))
+            log.info('generate_request:', 'added new request')
+        else:
+            log.warn('generate_request:', 'max requests reached')
 
     def get_requests_state(self):
         """Docstring"""
@@ -241,7 +278,6 @@ class Order():
         self.time_to_deliver = article.delivery_time
 
     def has_arrived(self):
-        print('time is: ', self.time_to_deliver)
         if self.time_to_deliver > 0:
             return False
         return True
@@ -278,46 +314,68 @@ class Actions():
         self.env = env
         self.action_reward = 0
 
-    def store(self):
-        # TODO store
-        print('store')
-        return 10
+    def store(self, article_id, storage_pos=None):
+        if storage_pos is None:
+            storage_pos = self.store_oracle()
+        if(storage_pos is not None and self.env.storage.storage_spaces[storage_pos].distance is not None):
+            article = self.env.arrivals.remove_article_from_arrival(
+                self.env.possible_articles.get_article_by_id(article_id))
+            if article is not None:
+                if(self.env.storage.store(article, storage_pos)):
+                    log.info('store: ' + article.get_name() +
+                             'in storage pos: ', storage_pos)
+                    return 10 * self.env.storage.storage_spaces[storage_pos].distance
+                log.info('store: space is already used...')
+                return -10 * self.env.storage.storage_spaces[storage_pos].distance
+            log.info('store: article not found')
+            return -10 * self.env.storage.storage_spaces[storage_pos].distance
+        log.info('store: storage space not found')
+        return 0  # storage space
 
-    def deliver(self):
+    def deliver(self, article_id):
         # TODO deliver
         # TODO deliver with oracle
-        print('deliver')
-        if True:
+        article = self.env.possible_articles.get_article_by_id(article_id)
+        if self.env.requests.deliver_article(article):
+            log.info('deliver:', article, 'was delivered')
             return 100
+        log.warn('deliver:', article, 'could not be delivered')
         return -100
 
-    def order(self):
-        # TODO order specific aticle
-        self.orders.new_order(self.env.possible_articles.get_random_article())
-        print('order, now there ', len(self.orders.orders), ' orders')
+    def order(self, article_id):
+        self.orders.new_order(
+            self.env.possible_articles.get_article_by_id(article_id))
+        log.info('order:', 'order, now there ',
+                 len(self.orders.orders), ' orders')
         return 0
 
-    def do_action(self, action):
+    def do_action(self, action, article_id=None):
         self.action_reward = 0
-        #print('arrived ', len(self.orders.update_orders()), ' orders')
+        # TODO use parameter to pick a article
+        if article_id is None:
+            article_id = self.env.possible_articles.get_random_article().get_id()
+
+        log.debug('do_action:', 'article', article_id)
+        # print('arrived ', len(self.orders.update_orders()), ' orders')
         self.action_reward += self.handle_arrivals(self.orders.update_orders())
         if action == 'STORE':
-            return self.store()+self.action_reward
+            return self.store(article_id)+self.action_reward
         elif action == 'DELIVER':
-            return self.deliver()+self.action_reward
+            return self.deliver(article_id)+self.action_reward
         elif action == 'ORDER':
-            return self.order()+self.action_reward
+            return self.order(article_id)+self.action_reward
 
     def handle_arrivals(self, arrived_articles):
         arrival_reward = 0
         for a in arrived_articles:
             if self.env.arrivals.add_article_to_arrival(a):
-                print('Stored article', self.env.arrivals.get_arrivals_state())
+                log.debug('handle_arrival:', 'Stored article',
+                          self.env.arrivals.get_arrivals_state())
                 arrival_reward += ORDER_POSITIVE_REWARD
             else:
                 arrival_reward += ORDER_NEGATIVE_REWARD
-                print('full')
-        print('arrival reward is ', arrival_reward)
+                log.warn('handle_arrival:', 'full')
+        log.debug('handle_arrival:', 'arrival reward is ', arrival_reward)
         return arrival_reward
 
     def action_random(self):
@@ -326,6 +384,69 @@ class Actions():
     def calc_reward(self):
         # TODO
         return 0
+
+    def store_oracle(self):
+        # TODO make store oracle inteligent
+        possible = self.env.storage.get_possible_spaces()
+        if(len(possible) > 0):
+            return random.choice(possible)
+        return None
+
+#    def arrival_oracle(self):
+#        # random choice of possible?
+#        possible = self.env.arrivals.get_possible_spaces()
+#        if(len(possible) > 0):
+#            return random.choice(self.actions)
+#        return None
+
+#    def deliver_oracle(self):
+#        return 0
+
+
+class Logger():
+    def __init__(self):
+        self.show_debug = False
+        self.show_info = False
+        self.show_warn = True
+        self.show_error = True
+        self.show_type = True
+        self.filter = ""  # "handle_arrival:"
+
+    def info(self, *arg):
+        if self.show_info and self._show(arg[0]):
+            if self.show_type:
+                print("INFO:", *arg)
+            else:
+                print(*arg)
+
+    def debug(self, *arg):
+        if self.show_debug and self._show(arg[0]):
+            if self.show_type:
+                print("DEBUG:", *arg)
+            else:
+                print(*arg)
+
+    def warn(self, *arg):
+        if self.show_warn and self._show(arg[0]):
+            if self.show_type:
+                print("WARN:", *arg)
+            else:
+                print(*arg)
+
+    def error(self, *arg):
+        if self.show_error and self._show(arg[0]):
+            if self.show_type:
+                print("ERROR:", *arg)
+            else:
+                print(*arg)
+
+    def _show(self, prefix):
+        if(prefix != self.filter):
+            return True
+        return False
+
+
+log = Logger()
 
 
 class WarehouseEnv(gym.Env):
@@ -347,14 +468,14 @@ class WarehouseEnv(gym.Env):
         if self.turn < self.max_turns:
             self.requests.generate_request(self.possible_articles)
             reward = self.actions.action_random()
-            print('Step ', self.turn)
+            log.info('Step ', self.turn)
             # TODO calc state and reward
             resulting_state = []
             self.turn += 1
 
             # state, reward, gameover, debug info
         else:
-            print('Finished!')
+            log.info('Finished!')
             # TODO calc state and reward
             resulting_state = []
             reward = 0
@@ -366,7 +487,7 @@ class WarehouseEnv(gym.Env):
         self.game_over = False
         self.turn = 0
         self._make_new_instances()
-        print('env reset')
+        log.info('env reset')
 
     def render(self):
         # TODO render
@@ -404,7 +525,7 @@ class WarehouseEnv(gym.Env):
         self.arrivals.add_article_to_arrival(Article(2, 0.5,  "Normal"))
 
 
-#a = WarehouseEnv(None, 2, 3, 50)
+# a = WarehouseEnv(None, 2, 3, 50)
 
 # Q Function
 if __name__ == '__main__':
@@ -414,7 +535,7 @@ if __name__ == '__main__':
     GAMMA = 1.0
     EPS = 1.0
     # TODO init q here
-    #Q = {}
+    # Q = {}
     # for state in env.stateSpacePlus:
     #    for action in env.possible_articles:
     #        Q[state, action] = 0
@@ -430,12 +551,12 @@ if __name__ == '__main__':
         done = False
         ep_rewards = 0
         # TODO Return something in env.reset
-        #observation = env.reset()
+        # observation = env.reset()
         env.reset()
         while not done:
             # TODO seed?
             rand = np.random.random()
-            #action = max_action(Q, observation, env.possible_actions)
+            # action = max_action(Q, observation, env.possible_actions)
             [state, reward, game_over, debug] = env.step()
             ep_rewards = ep_rewards + reward
             if env.game_over:
