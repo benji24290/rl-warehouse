@@ -15,6 +15,7 @@ STORE_POSITIVE_REWARD = 10
 STORE_NEGATIVE_REWARD = -10
 DELIVER_POSITIVE_REWARD = 100
 DELIVER_NEGATIVE_REWARD = -100
+REQUEST_EXPIRED_REWARD = -50
 INVENTORY_COST_FACTOR = 1
 
 # TODO Add docstrings
@@ -128,6 +129,19 @@ class Storage():
                 spaces.append(i)
         return spaces
 
+    def get_used_spaces_count(self):
+        '''Returns the the count of used spaces
+
+        Returns
+        ------
+        int: count of used spaces    
+        '''
+        count = 0
+        for i in range(len(self.storage_spaces)):
+            if(self.storage_spaces[i].article is not None):
+                count += 1
+        return count
+
     def get_storage_state(self):
         # TODO return all states as....
         state = []
@@ -140,6 +154,10 @@ class Storage():
             self.storage_spaces[pos].store_article(article)
             return True
         return False
+
+    def get_storage_reward(self):
+        '''Calculates the storage cost: returns int'''
+        return self.get_used_spaces_count()*-1*INVENTORY_COST_FACTOR
 
     def _is_space_empty(self, pos):
         try:
@@ -182,6 +200,19 @@ class Arrivals():
         for a in self.arrivals:
             state.append(a.get_arrival_space_state())
         return state
+
+    def handle_arrivals(self, arrived_articles):
+        arrival_reward = 0
+        for a in arrived_articles:
+            if self.add_article_to_arrival(a):
+                log.debug('handle_arrival:', 'Stored article',
+                          self.get_arrivals_state())
+                arrival_reward += ORDER_POSITIVE_REWARD
+            else:
+                arrival_reward += ORDER_NEGATIVE_REWARD
+                log.warn('handle_arrival:', 'full')
+        log.debug('handle_arrival:', 'arrival reward is ', arrival_reward)
+        return arrival_reward
 
 
 class ArrivalSpace():
@@ -244,13 +275,23 @@ class Requests():
 
     def generate_request(self, possible_articles):
         # TODO generate a request with prob.
-        # TODO check if max req not reched
         if(len(self.requests) < self.max_requests):
             self.requests.append(
                 Request(random.choice(possible_articles.articles)))
             log.info('generate_request:', 'added new request')
         else:
             log.warn('generate_request:', 'max requests reached')
+
+    def update_requests(self):
+        reward = 0
+        for r in self.requests:
+            if(r.time > 1):
+                r.time = r.time-1
+            else:
+                self.requests.remove(r)
+                reward = reward + REQUEST_EXPIRED_REWARD
+                log.warn('update_request:', 'time expired, reward:', reward)
+        return reward
 
     def get_requests_state(self):
         """Docstring"""
@@ -309,8 +350,6 @@ class Orders():
 class Actions():
     def __init__(self, env):
         self.actions = ['STORE', 'DELIVER', 'ORDER']
-        # TODO make custom class for orders
-        self.orders = Orders()
         self.env = env
         self.action_reward = 0
 
@@ -333,7 +372,6 @@ class Actions():
         return 0  # storage space
 
     def deliver(self, article_id):
-        # TODO deliver
         # TODO deliver with oracle
         article = self.env.possible_articles.get_article_by_id(article_id)
         if self.env.requests.deliver_article(article):
@@ -343,47 +381,30 @@ class Actions():
         return -100
 
     def order(self, article_id):
-        self.orders.new_order(
+        self.env.orders.new_order(
             self.env.possible_articles.get_article_by_id(article_id))
         log.info('order:', 'order, now there ',
-                 len(self.orders.orders), ' orders')
+                 len(self.env.orders.orders), ' orders')
         return 0
 
     def do_action(self, action, article_id=None):
-        self.action_reward = 0
+        '''Performs specified action, if article_id is None a random id will be generated. Does not return anything, the reward will be added to the env.reward'''
         # TODO use parameter to pick a article
         if article_id is None:
             article_id = self.env.possible_articles.get_random_article().get_id()
 
         log.debug('do_action:', 'article', article_id)
-        # print('arrived ', len(self.orders.update_orders()), ' orders')
-        self.action_reward += self.handle_arrivals(self.orders.update_orders())
-        if action == 'STORE':
-            return self.store(article_id)+self.action_reward
-        elif action == 'DELIVER':
-            return self.deliver(article_id)+self.action_reward
-        elif action == 'ORDER':
-            return self.order(article_id)+self.action_reward
 
-    def handle_arrivals(self, arrived_articles):
-        arrival_reward = 0
-        for a in arrived_articles:
-            if self.env.arrivals.add_article_to_arrival(a):
-                log.debug('handle_arrival:', 'Stored article',
-                          self.env.arrivals.get_arrivals_state())
-                arrival_reward += ORDER_POSITIVE_REWARD
-            else:
-                arrival_reward += ORDER_NEGATIVE_REWARD
-                log.warn('handle_arrival:', 'full')
-        log.debug('handle_arrival:', 'arrival reward is ', arrival_reward)
-        return arrival_reward
+        if action == 'STORE':
+            self.env.rewards.add_reward_action_store(self.store(article_id))
+        elif action == 'DELIVER':
+            self.env.rewards.add_reward_action_deliver(
+                self.deliver(article_id))
+        elif action == 'ORDER':
+            self.env.rewards.add_reward_action_order(self.order(article_id))
 
     def action_random(self):
         return self.do_action(random.choice(self.actions))
-
-    def calc_reward(self):
-        # TODO
-        return 0
 
     def store_oracle(self):
         # TODO make store oracle inteligent
@@ -401,6 +422,73 @@ class Actions():
 
 #    def deliver_oracle(self):
 #        return 0
+
+
+class Rewards():
+    def __init__(self):
+        self.step = 0
+        self.step_reward = 0
+        self.episode_rewards = []
+        self.total_episode_reward = 0
+        self.rewards_loop_storage = []
+        self.rewards_loop_request_updates = []
+        self.rewards_loop_arrival = []
+        self.rewards_action_deliver = []
+        self.rewards_action_store = []
+        self.rewards_action_order = []
+
+    def add_reward_loop_storage(self, reward):
+        self.rewards_loop_storage.append(reward)
+
+    def add_reward_loop_request_updates(self, reward):
+        self.rewards_loop_request_updates.append(reward)
+
+    def add_reward_loop_arrival(self, reward):
+        self.rewards_loop_arrival.append(reward)
+
+    def add_reward_action_deliver(self, reward):
+        self.rewards_action_deliver.append(reward)
+
+    def add_reward_action_store(self, reward):
+        self.rewards_action_store.append(reward)
+
+    def add_reward_action_order(self, reward):
+        self.rewards_action_order.append(reward)
+
+    def calculate_step_reward(self):
+        self.step_reward = 0
+        self.step_reward += self.get_step_reward_of_array(
+            self.rewards_loop_storage)
+        self.step_reward += self.get_step_reward_of_array(
+            self.rewards_loop_request_updates)
+        self.step_reward += self.get_step_reward_of_array(
+            self.rewards_loop_arrival)
+        self.step_reward += self.get_step_reward_of_array(
+            self.rewards_action_deliver)
+        self.step_reward += self.get_step_reward_of_array(
+            self.rewards_action_store)
+        self.step_reward += self.get_step_reward_of_array(
+            self.rewards_action_order)
+        self.episode_rewards.append(self.step_reward)
+        self.total_episode_reward += self.step_reward
+        self.step += 1
+        return self.step_reward
+
+    def get_total_episode_reward(self):
+        return self.total_episode_reward
+
+    def get_step_reward_of_array(self, array):
+        try:
+            step_reward = array[self.step]
+            return step_reward
+        except IndexError:
+            array.append(0)
+            log.error('get_step_reward_of_array:', 'no index')
+            return 0
+
+    # TODO add a plot function
+    def plot_rewards(self):
+        pass
 
 
 class Logger():
@@ -441,7 +529,7 @@ class Logger():
                 print(*arg)
 
     def _show(self, prefix):
-        if(prefix != self.filter):
+        if(self.filter == "" or prefix == self.filter):
             return True
         return False
 
@@ -459,6 +547,7 @@ class WarehouseEnv(gym.Env):
         self.game_over = False
         if seed is None:
             self.seed = random.randint(0, sys.maxsize)
+        random.seed(self.seed)
         print('Env initialized seed:', self.seed)
         self._make_new_instances()
         self._add_test_values()
@@ -466,10 +555,16 @@ class WarehouseEnv(gym.Env):
 
     def step(self):
         if self.turn < self.max_turns:
-            self.requests.generate_request(self.possible_articles)
-            reward = self.actions.action_random()
+
+            self._pre_step()
+
+            self.actions.action_random()
             log.info('Step ', self.turn)
-            # TODO calc state and reward
+
+            self._post_step()
+
+            reward = self.rewards.calculate_step_reward()
+
             resulting_state = []
             self.turn += 1
 
@@ -482,6 +577,29 @@ class WarehouseEnv(gym.Env):
             self.game_over = True
             # state, reward, gameover, debug info
         return resulting_state, reward, self.game_over, None
+
+    def _post_step(self):
+        pass
+
+    def _pre_step(self):
+        # get storage cost with the last state
+        #self.action_reward += self.env.storage.get_storage_reward()
+        self.rewards.add_reward_loop_storage(
+            self.storage.get_storage_reward())
+
+        # update requests (delete undeliverd)
+        #self.action_reward += self.env.requests.update_requests()
+        self.rewards.add_reward_loop_request_updates(
+            self.requests.update_requests())
+
+        # generate requests
+        # TODO add counter in request to only gen %2 turn or with prob.
+        self.requests.generate_request(self.possible_articles)
+
+        # handle arrivals
+        #self.action_reward += self.handle_arrivals(self.orders.update_orders())
+        self.rewards.add_reward_loop_arrival(
+            self.arrivals.handle_arrivals(self.orders.update_orders()))
 
     def reset(self):
         self.game_over = False
@@ -509,11 +627,13 @@ class WarehouseEnv(gym.Env):
         return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
 
     def _make_new_instances(self):
+        self.rewards = Rewards()
         self.arrivals = Arrivals(self.max_arrivals)
         self.possible_articles = ArticleCollection()
         self.requests = Requests(self.max_requests)
         self.storage = Storage(3)
         self.actions = Actions(self)
+        self.orders = Orders()
 
     def _add_test_values(self):
         # Storage article
@@ -549,18 +669,17 @@ if __name__ == '__main__':
         if i % 10 == 0:
             print('starting episode', i)
         done = False
-        ep_rewards = 0
         # TODO Return something in env.reset
         # observation = env.reset()
         env.reset()
         while not done:
             # TODO seed?
-            rand = np.random.random()
+            #rand = np.random.random()
             # action = max_action(Q, observation, env.possible_actions)
             [state, reward, game_over, debug] = env.step()
-            ep_rewards = ep_rewards + reward
             if env.game_over:
                 break
-        print('Episode ', i, ' reward is:', ep_rewards)
+        print('Episode ', i, ' reward is:',
+              env.rewards.get_total_episode_reward())
 
 # DQN
