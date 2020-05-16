@@ -4,6 +4,7 @@ import sys
 import json
 import itertools
 import gym
+from itertools import product
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -52,11 +53,11 @@ class ArticleCollection():
 
     def _generate_articles(self):
         self.articles.append(
-            Article(0, 0.2, "Selten"))
+            Article(1, 0.2, "Selten"))
         self.articles.append(
-            Article(1, 0.8,  "Häufig"))
+            Article(2, 0.8,  "Häufig"))
         self.articles.append(
-            Article(2, 0.5,  "Normal"))
+            Article(3, 0.5,  "Normal"))
         log.info("Possible articles added")
 
     def get_possible_articles(self):
@@ -97,7 +98,11 @@ class StorageSpace():
         self.article = None
 
     def get_storage_space_state(self):
-        # TODO return storage space info
+        if self.article == None:
+            return 0
+        return [self.article.get_id(), self.distance]
+
+    def get_simple_storage_space_state(self):
         if self.article == None:
             return 0
         return self.article.get_id()
@@ -109,13 +114,16 @@ class StorageSpace():
 
 
 class Storage():
-    def __init__(self, count=3):
-        self.storage_spaces = self._init_spaces(count)
+    def __init__(self, count):
+        self.storage_spaces = []
+        self._init_spaces(count)
         log.info('Initialized storage', self.get_storage_state())
 
     def _init_spaces(self, count):
-        # TODO dynamic size see articles
-        return [StorageSpace(1), StorageSpace(2), StorageSpace(3)]
+        # generates all the storage spaces, the distance is equal to n
+        # TODO maybe diastance  %3
+        for i in range(count):
+            self.storage_spaces.append(StorageSpace(i))
 
     def get_possible_space(self):
         # TODO return random possible space
@@ -134,7 +142,7 @@ class Storage():
 
         Returns
         ------
-        int: count of used spaces    
+        int: count of used spaces
         '''
         count = 0
         for i in range(len(self.storage_spaces)):
@@ -143,10 +151,15 @@ class Storage():
         return count
 
     def get_storage_state(self):
-        # TODO return all states as....
         state = []
         for s in self.storage_spaces:
             state.append(s.get_storage_space_state())
+        return state
+
+    def get_simple_storage_state(self):
+        state = []
+        for s in self.storage_spaces:
+            state.append(s.get_simple_storage_space_state())
         return state
 
     def store(self, article, pos):
@@ -161,7 +174,7 @@ class Storage():
 
     def _is_space_empty(self, pos):
         try:
-            return self.storage_spaces[pos].get_storage_space_state() == 0
+            return self.storage_spaces[pos].get_simple_storage_space_state() == 0
         except IndexError:
             return False
 
@@ -173,7 +186,7 @@ class Storage():
 
 
 class Arrivals():
-    def __init__(self, count=1):
+    def __init__(self, count):
         self.max_arrivals = count
         self.arrivals = []
         self._initialize_spaces(self.max_arrivals)
@@ -199,6 +212,12 @@ class Arrivals():
         state = []
         for a in self.arrivals:
             state.append(a.get_arrival_space_state())
+        return state
+
+    def get_simple_arrivals_state(self):
+        state = []
+        for a in self.arrivals:
+            state.append(a.get_simple_arrival_space_state())
         return state
 
     def handle_arrivals(self, arrived_articles):
@@ -233,7 +252,12 @@ class ArrivalSpace():
         return a
 
     def get_arrival_space_state(self):
-        # TODO return storage space info
+        # TODO return more arrival space info
+        if self.article == None:
+            return 0
+        return self.article.get_id()
+
+    def get_simple_arrival_space_state(self):
         if self.article == None:
             return 0
         return self.article.get_id()
@@ -258,9 +282,12 @@ class Request():
     def get_request_state(self):
         return [self.article.get_id(), self.time, self.reward_value]
 
+    def get_simple_request_state(self):
+        return self.article.get_id()
+
 
 class Requests():
-    def __init__(self, count=2):
+    def __init__(self, count):
         self.max_requests = count
         self.requests = []
 
@@ -294,11 +321,20 @@ class Requests():
         return reward
 
     def get_requests_state(self):
-        """Docstring"""
-        # TODO return all states as....
+        """Returns all pending requests as arrays"""
         state = []
         for r in self.requests:
             state.append(r.get_request_state())
+        return state
+
+    def get_simple_requests_state(self):
+        """Returs all pending request in one 1d array"""
+        state = []
+        for i in range(self.max_requests):
+            try:
+                state.append(self.requests[i].get_simple_request_state())
+            except:
+                state.append(0)
         return state
 
     def __str__(self):
@@ -403,8 +439,12 @@ class Actions():
         elif action == 'ORDER':
             self.env.rewards.add_reward_action_order(self.order(article_id))
 
+    # TODO remove this?
     def action_random(self):
         return self.do_action(random.choice(self.actions))
+
+    def get_random_action(self):
+        return random.choice(self.actions)
 
     def store_oracle(self):
         # TODO make store oracle inteligent
@@ -426,9 +466,15 @@ class Actions():
 
 class Rewards():
     def __init__(self):
+        self.all_episode_rewards = []
+        self.all_rewards_loop_storage = []
+        self.all_rewards_loop_request_updates = []
+        self.all_rewards_loop_arrival = []
+        self.all_rewards_action_deliver = []
+        self.all_rewards_action_store = []
+        self.all_rewards_action_order = []
         self.step = 0
         self.step_reward = 0
-        self.episode_rewards = []
         self.total_episode_reward = 0
         self.rewards_loop_storage = []
         self.rewards_loop_request_updates = []
@@ -436,6 +482,26 @@ class Rewards():
         self.rewards_action_deliver = []
         self.rewards_action_store = []
         self.rewards_action_order = []
+
+    def reset_episode(self):
+        if self.step > 0:
+            self.all_episode_rewards.append(self.total_episode_reward)
+            self.all_rewards_loop_storage.append(self.rewards_loop_storage)
+            self.all_rewards_loop_request_updates.append(
+                self.rewards_loop_request_updates)
+            self.all_rewards_loop_arrival.append(self.rewards_loop_arrival)
+            self.all_rewards_action_deliver.append(self.rewards_action_deliver)
+            self.all_rewards_action_store.append(self.rewards_action_store)
+            self.all_rewards_action_order.append(self.rewards_action_order)
+            self.step = 0
+            self.step_reward = 0
+            self.total_episode_reward = 0
+            self.rewards_loop_storage = []
+            self.rewards_loop_request_updates = []
+            self.rewards_loop_arrival = []
+            self.rewards_action_deliver = []
+            self.rewards_action_store = []
+            self.rewards_action_order = []
 
     def add_reward_loop_storage(self, reward):
         self.rewards_loop_storage.append(reward)
@@ -469,7 +535,7 @@ class Rewards():
             self.rewards_action_store)
         self.step_reward += self.get_step_reward_of_array(
             self.rewards_action_order)
-        self.episode_rewards.append(self.step_reward)
+        # self.episode_rewards.append(self.step_reward)
         self.total_episode_reward += self.step_reward
         self.step += 1
         return self.step_reward
@@ -483,19 +549,105 @@ class Rewards():
             return step_reward
         except IndexError:
             array.append(0)
-            log.error('get_step_reward_of_array:', 'no index')
+            log.debug('get_step_reward_of_array:', 'no index')
             return 0
 
-    # TODO add a plot function
-    def plot_rewards(self):
-        pass
+    def plot_total_episode_rewards(self):
+        '''Plots the total reward for each episode'''
+        self.reset_episode()
+        plt.plot(self.all_episode_rewards)
+        plt.show()
+
+    def plot_episode_rewards(self, episode):
+        '''Plots the all rewards for a given episode'''
+        self.reset_episode()
+        try:
+            plt.plot(
+                self.all_rewards_loop_storage[episode], label='l_storage')
+            plt.plot(
+                self.all_rewards_loop_request_updates[episode], label='l_request')
+            plt.plot(self.all_rewards_loop_arrival[episode], label='l_arrival')
+            plt.plot(
+                self.all_rewards_action_deliver[episode], label='a_deliver')
+            plt.plot(self.all_rewards_action_store[episode], label='a_store')
+            plt.plot(self.all_rewards_action_order[episode], label='a_order')
+        except:
+            log.error('plot_episode_rewards:', 'no valid episode', episode)
+        plt.legend()
+        plt.show()
+
+    def plot_loot_storage(self, episode=None):
+        '''Plots the loot_storage reward foreach step in each episode.
+        if episode is defined only given episode will be plotted'''
+        self.reset_episode()
+        try:
+            plt.plot(self.all_rewards_loop_storage[episode])
+        except:
+            for episode in self.all_rewards_loop_storage:
+                plt.plot(episode)
+        plt.show()
+
+    def plot_loot_request_updates(self, episode=None):
+        '''Plots the loop_request_updates reward foreach step in each episode.
+        if episode is defined only given episode will be plotted'''
+        self.reset_episode()
+        try:
+            plt.plot(self.all_rewards_loop_request_updates[episode])
+        except:
+            for episode in self.all_rewards_loop_request_updates:
+                plt.plot(episode)
+        plt.show()
+
+    def plot_loot_arrival(self, episode=None):
+        '''Plots the loot_arrival reward foreach step in each episode.
+        if episode is defined only given episode will be plotted'''
+        self.reset_episode()
+        try:
+            plt.plot(self.all_rewards_loop_arrival[episode])
+        except:
+            for episode in self.all_rewards_loop_arrival:
+                plt.plot(episode)
+        plt.show()
+
+    def plot_action_deliver(self, episode=None):
+        '''Plots the action_deliver reward foreach step in each episode.
+        if episode is defined only given episode will be plotted'''
+        self.reset_episode()
+        try:
+            plt.plot(self.all_rewards_action_deliver[episode])
+        except:
+            for episode in self.all_rewards_action_deliver:
+                plt.plot(episode)
+        plt.show()
+
+    def plot_action_store(self, episode=None):
+        '''Plots the action_store reward foreach step in each episode.
+        if episode is defined only given episode will be plotted'''
+        self.reset_episode()
+        try:
+            plt.plot(self.all_rewards_action_store[episode])
+        except:
+            for episode in self.all_rewards_action_store:
+                plt.plot(episode)
+        plt.show()
+
+    def plot_action_order(self, episode=None):
+        '''Plots the action_order reward foreach step in each episode.
+        if episode is defined only given episode will be plotted'''
+        self.reset_episode()
+        try:
+            plt.plot(self.all_rewards_action_order[episode])
+        except:
+            for episode in self.all_rewards_action_order:
+                plt.plot(episode)
+        plt.show()
 
 
 class Logger():
     def __init__(self):
         self.show_debug = False
         self.show_info = False
-        self.show_warn = True
+        self.show_warn = False
         self.show_error = True
         self.show_type = True
         self.filter = ""  # "handle_arrival:"
@@ -538,11 +690,14 @@ log = Logger()
 
 
 class WarehouseEnv(gym.Env):
-    def __init__(self, seed=None, max_requests=2, max_arrivals=1, max_turns=50):
+    def __init__(self, seed=None, max_requests=2, max_arrivals=1, storage_spaces=3, max_turns=50, simple_state=True):
         self.seed = seed
+        self.rewards = Rewards()
+        self.storage_spaces = storage_spaces
         self.max_requests = max_requests
         self.max_arrivals = max_arrivals
         self.max_turns = max_turns
+        self.simple_state = simple_state
         self.turn = 0
         self.game_over = False
         if seed is None:
@@ -565,14 +720,15 @@ class WarehouseEnv(gym.Env):
 
             reward = self.rewards.calculate_step_reward()
 
-            resulting_state = []
+            #resulting_state = []
+            resulting_state = self.get_state()
             self.turn += 1
 
             # state, reward, gameover, debug info
         else:
             log.info('Finished!')
-            # TODO calc state and reward
-            resulting_state = []
+            #resulting_state = []
+            resulting_state = self.get_state()
             reward = 0
             self.game_over = True
             # state, reward, gameover, debug info
@@ -583,12 +739,12 @@ class WarehouseEnv(gym.Env):
 
     def _pre_step(self):
         # get storage cost with the last state
-        #self.action_reward += self.env.storage.get_storage_reward()
+        # self.action_reward += self.env.storage.get_storage_reward()
         self.rewards.add_reward_loop_storage(
             self.storage.get_storage_reward())
 
         # update requests (delete undeliverd)
-        #self.action_reward += self.env.requests.update_requests()
+        # self.action_reward += self.env.requests.update_requests()
         self.rewards.add_reward_loop_request_updates(
             self.requests.update_requests())
 
@@ -597,15 +753,19 @@ class WarehouseEnv(gym.Env):
         self.requests.generate_request(self.possible_articles)
 
         # handle arrivals
-        #self.action_reward += self.handle_arrivals(self.orders.update_orders())
+        # self.action_reward += self.handle_arrivals(self.orders.update_orders())
         self.rewards.add_reward_loop_arrival(
             self.arrivals.handle_arrivals(self.orders.update_orders()))
 
     def reset(self):
+        # print(self.get_state())
         self.game_over = False
         self.turn = 0
         self._make_new_instances()
+        self.rewards.reset_episode()
         log.info('env reset')
+        # TODO extended state
+        return self.get_state()
 
     def render(self):
         # TODO render
@@ -622,16 +782,46 @@ class WarehouseEnv(gym.Env):
         print(self.requests.get_requests_state())
         print(self.arrivals.get_arrivals_state())
 
-    def getState(self):
-        # TODO return all states including turn?
-        return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
+    def get_state(self):
+        if self.simple_state:
+            return tuple(self._get_simple_state())
+        return tuple(self._get_extended_state())
+
+    def _get_extended_state(self):
+        # return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
+        return self.storage.get_storage_state() + self.requests.get_requests_state() + self.arrivals.get_arrivals_state()
+
+    def _get_simple_state(self):
+        # return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
+        return self.storage.get_simple_storage_state()+self.requests.get_simple_requests_state() + self.arrivals.get_simple_arrivals_state()
+
+    def get_possible_states(self):
+        if self.simple_state:
+            return self._get_simple_possible_states()
+        return self._get_extendet_possible_states()
+
+    def _get_extendet_possible_states(self):
+        # TODO generate possible states
+        pass
+        # self.storage.get_possible_storage_states() + self.requests.get_possible_requests_states() + \
+        #   self.arrivals.get_possible_arrivals_states()
+
+    def _get_simple_possible_states(self):
+        state_elements = self.max_requests + self.max_arrivals + self.storage_spaces
+        possible_states = tuple(
+            range(len(self.possible_articles.get_possible_articles())+1))
+        arrays = []
+        for i in range(state_elements):
+            arrays.append(possible_states)
+        cp = list(product(*arrays))
+        print('There are', len(cp), 'possible states')
+        return cp
 
     def _make_new_instances(self):
-        self.rewards = Rewards()
         self.arrivals = Arrivals(self.max_arrivals)
         self.possible_articles = ArticleCollection()
         self.requests = Requests(self.max_requests)
-        self.storage = Storage(3)
+        self.storage = Storage(self.storage_spaces)
         self.actions = Actions(self)
         self.orders = Orders()
 
@@ -645,41 +835,102 @@ class WarehouseEnv(gym.Env):
         self.arrivals.add_article_to_arrival(Article(2, 0.5,  "Normal"))
 
 
-# a = WarehouseEnv(None, 2, 3, 50)
+# Random
+def random_actions():
+    env = WarehouseEnv(None, 2, 2, 3, 50)
 
-# Q Function
-if __name__ == '__main__':
-    env = WarehouseEnv(None, 2, 3, 50)
-
-    ALPHA = 0.1
-    GAMMA = 1.0
-    EPS = 1.0
-    # TODO init q here
-    # Q = {}
-    # for state in env.stateSpacePlus:
-    #    for action in env.possible_articles:
-    #        Q[state, action] = 0
-
-    # TODO rename to episodes
     num_ep = 100
-    total_rewards = np.zeros(num_ep)
 
     for i in range(num_ep):
         # Print all n episodes
         if i % 10 == 0:
             print('starting episode', i)
         done = False
-        # TODO Return something in env.reset
         # observation = env.reset()
         env.reset()
         while not done:
             # TODO seed?
-            #rand = np.random.random()
+            # rand = np.random.random()
             # action = max_action(Q, observation, env.possible_actions)
             [state, reward, game_over, debug] = env.step()
             if env.game_over:
                 break
         print('Episode ', i, ' reward is:',
               env.rewards.get_total_episode_reward())
+    env.rewards.plot_total_episode_rewards()
+    env.rewards.plot_episode_rewards(1)
+    # env.rewards.plot_loot_storage(1)
+    # env.rewards.plot_loot_request_updates(1)
+    # env.rewards.plot_loot_arrival(1)
+    # env.rewards.plot_action_deliver(1)
+    # env.rewards.plot_action_order(1)
+    # env.rewards.plot_action_store(1)
+
+
+# Q Function
+def q_function():
+
+    def max_action(Q, state, actions):
+        values = np.array([Q[state, a] for a in actions])
+        action = np.argmax(values)
+        #print('best action is', action, actions[action])
+        return actions[action]
+
+    env = WarehouseEnv(None, 2, 2, 3, 50)
+
+    ALPHA = 0.1  # learningrate
+    GAMMA = 1.0
+    EPS = 1.0  # eps greedy action selection
+
+    # TODO init q here
+    Q = {}
+    for state in env.get_possible_states():
+        # TODO add actions with articles
+        for action in env.actions.actions:
+            Q[state, action] = 0
+
+    num_ep = 10000000
+    total_rewards = np.zeros(num_ep)
+
+    for i in range(num_ep):
+        # Print all n episodes
+        if i % 1000 == 0:
+            print('starting episode', i)
+        done = False
+        observation = env.reset()
+        while not done:
+            # TODO seed?
+            rand = random.random()
+            action = max_action(Q, observation, env.actions.actions) if rand < (1-EPS) \
+                else env.actions.get_random_action()
+            observation_, reward, game_over, debug = env.step()
+
+            action_ = max_action(Q, observation_, env.actions.actions)
+            # Update Q table
+            Q[observation, action] = Q[observation, action] + ALPHA*(reward +
+                                                                     GAMMA*Q[observation_, action_] - Q[observation, action])
+            observation = observation_
+
+            # linear decrease of epsilon
+            if EPS - 2 / num_ep > 0:
+                EPS -= 2 / num_ep
+            else:
+                EPS = 0
+
+            if env.game_over:
+                break
+        if i % 5000 == 0:
+            print('Episode ', i, ' reward is:',
+                  env.rewards.get_total_episode_reward())
+
+    print(Q)
+    env.rewards.plot_total_episode_rewards()
+    env.rewards.plot_episode_rewards(1)
+
 
 # DQN
+# TODO add dqn
+
+if __name__ == '__main__':
+    # random_actions()
+    q_function()
