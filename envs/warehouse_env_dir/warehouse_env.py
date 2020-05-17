@@ -287,17 +287,21 @@ class Request():
 
 
 class Requests():
-    def __init__(self, count):
+    def __init__(self, env, count):
+        self.env = env
         self.max_requests = count
         self.requests = []
 
     def deliver_article(self, article):
         # TODO every request has same
         if article is not None:
-            for r in self.requests:
-                if r.article == article:
-                    self.requests.remove(r)
-                    return True
+            for space in self.env.storage.storage_spaces:
+                if space.article == article:
+                    for r in self.requests:
+                        if r.article == article:
+                            space.retrieve_article()
+                            self.requests.remove(r)
+                            return True
         return False
 
     def generate_request(self, possible_articles):
@@ -426,6 +430,10 @@ class Actions():
     def do_action(self, action, article_id=None):
         '''Performs specified action, if article_id is None a random id will be generated. Does not return anything, the reward will be added to the env.reward'''
         # TODO use parameter to pick a article
+        if action is None:
+            # print('random because:', action)
+            return self.action_random()
+
         if article_id is None:
             article_id = self.env.possible_articles.get_random_article().get_id()
 
@@ -438,8 +446,9 @@ class Actions():
                 self.deliver(article_id))
         elif action == 'ORDER':
             self.env.rewards.add_reward_action_order(self.order(article_id))
+        elif action == 'IDLE':
+            print('idle this step....')
 
-    # TODO remove this?
     def action_random(self):
         return self.do_action(random.choice(self.actions))
 
@@ -542,6 +551,15 @@ class Rewards():
 
     def get_total_episode_reward(self):
         return self.total_episode_reward
+
+    def print_final_reward_infos(self):
+        self.reset_episode()
+        print('________________')
+        print('Mean:', np.mean(self.all_episode_rewards))
+        print('First episode rew:',
+              self.all_episode_rewards[0])
+        print('Last episode rew:',
+              self.all_episode_rewards[len(self.all_episode_rewards)-1])
 
     def get_step_reward_of_array(self, array):
         try:
@@ -708,26 +726,26 @@ class WarehouseEnv(gym.Env):
         self._add_test_values()
         self._print_env_state()
 
-    def step(self):
+    def step(self, action=None, article_id=None):
         if self.turn < self.max_turns:
 
             self._pre_step()
-
-            self.actions.action_random()
+            self.actions.do_action(action, article_id)
+            # self.actions.action_random()
             log.info('Step ', self.turn)
 
             self._post_step()
 
             reward = self.rewards.calculate_step_reward()
 
-            #resulting_state = []
+            # resulting_state = []
             resulting_state = self.get_state()
             self.turn += 1
 
             # state, reward, gameover, debug info
         else:
             log.info('Finished!')
-            #resulting_state = []
+            # resulting_state = []
             resulting_state = self.get_state()
             reward = 0
             self.game_over = True
@@ -820,7 +838,7 @@ class WarehouseEnv(gym.Env):
     def _make_new_instances(self):
         self.arrivals = Arrivals(self.max_arrivals)
         self.possible_articles = ArticleCollection()
-        self.requests = Requests(self.max_requests)
+        self.requests = Requests(self, self.max_requests)
         self.storage = Storage(self.storage_spaces)
         self.actions = Actions(self)
         self.orders = Orders()
@@ -836,14 +854,15 @@ class WarehouseEnv(gym.Env):
 
 
 # Random
-def random_actions():
-    env = WarehouseEnv(None, 2, 2, 3, 50)
+def random_actions(count=100):
+    # env = WarehouseEnv(None, 2, 2, 3, 50)
+    env = WarehouseEnv(None, 2, 2, 3, 1000)
 
-    num_ep = 100
+    num_ep = count
 
     for i in range(num_ep):
         # Print all n episodes
-        if i % 10 == 0:
+        if i % 1000 == 0:
             print('starting episode', i)
         done = False
         # observation = env.reset()
@@ -855,28 +874,33 @@ def random_actions():
             [state, reward, game_over, debug] = env.step()
             if env.game_over:
                 break
-        print('Episode ', i, ' reward is:',
-              env.rewards.get_total_episode_reward())
-    env.rewards.plot_total_episode_rewards()
-    env.rewards.plot_episode_rewards(1)
+        if i % 1000 == 0:
+            print('Episode ', i, ' reward is:',
+                  env.rewards.get_total_episode_reward())
+
+    env.rewards.print_final_reward_infos()
+    # env.rewards.plot_total_episode_rewards()
+    # env.rewards.plot_episode_rewards(1)
+
     # env.rewards.plot_loot_storage(1)
     # env.rewards.plot_loot_request_updates(1)
     # env.rewards.plot_loot_arrival(1)
     # env.rewards.plot_action_deliver(1)
     # env.rewards.plot_action_order(1)
     # env.rewards.plot_action_store(1)
+    return env.rewards.all_episode_rewards
 
 
 # Q Function
-def q_function():
+def q_function(count=50000):
 
     def max_action(Q, state, actions):
         values = np.array([Q[state, a] for a in actions])
         action = np.argmax(values)
-        #print('best action is', action, actions[action])
+        # print('best action is', action, actions[action])
         return actions[action]
 
-    env = WarehouseEnv(None, 2, 2, 3, 50)
+    env = WarehouseEnv(None, 2, 2, 3, 1000)
 
     ALPHA = 0.1  # learningrate
     GAMMA = 1.0
@@ -889,7 +913,7 @@ def q_function():
         for action in env.actions.actions:
             Q[state, action] = 0
 
-    num_ep = 10000000
+    num_ep = count
     total_rewards = np.zeros(num_ep)
 
     for i in range(num_ep):
@@ -903,7 +927,7 @@ def q_function():
             rand = random.random()
             action = max_action(Q, observation, env.actions.actions) if rand < (1-EPS) \
                 else env.actions.get_random_action()
-            observation_, reward, game_over, debug = env.step()
+            observation_, reward, game_over, debug = env.step(action)
 
             action_ = max_action(Q, observation_, env.actions.actions)
             # Update Q table
@@ -919,18 +943,110 @@ def q_function():
 
             if env.game_over:
                 break
-        if i % 5000 == 0:
+        if i % 1000 == 0:
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
 
     print(Q)
-    env.rewards.plot_total_episode_rewards()
-    env.rewards.plot_episode_rewards(1)
+    env.rewards.print_final_reward_infos()
+    # env.rewards.plot_total_episode_rewards()
+    # env.rewards.plot_episode_rewards(1)
+    # env.rewards.plot_episode_rewards(num_ep-1)
+    return env.rewards.all_episode_rewards
 
 
 # DQN
 # TODO add dqn
 
+
+# Heuristic
+
+
+def heuristic(count=100):
+    # env = WarehouseEnv(None, 2, 2, 3, 50)
+    env = WarehouseEnv(None, 2, 2, 3, 1000)
+
+    num_ep = count
+
+    for i in range(num_ep):
+        # Print all n episodes
+        if i % 1000 == 0:
+            print('starting episode', i)
+        done = False
+        # observation = env.reset()
+        env.reset()
+        while not done:
+            action = None
+            a_id = None
+            # prio 1: fullfill requests if article is in store
+            for req in env.requests.requests:
+                for space in env.storage.storage_spaces:
+                    if req.article == space.article and action == None:
+                        #print('deliver:', req.article.name, space.article.name)
+                        action = 'DELIVER'
+                        a_id = req.article.id
+            # prio 2: store articles from arrival
+            if(action == None):
+                position = env.actions.store_oracle()
+                if position:
+                    for arr_space in env.arrivals.arrivals:
+                        if arr_space.article:
+                            action = 'STORE'
+                            a_id = arr_space.article.id
+
+            # prio 3: order article from wich the least are stored
+            if(action == None):
+                # TODO least stored
+                for possible in env.possible_articles.articles:
+                    if possible.id not in env.storage.get_simple_storage_state():
+                        if len(env.orders.orders) < 1:
+                            action = 'ORDER'
+                            a_id = possible.id
+                        else:
+                            for order in env.orders.orders:
+                                if(order.article.id is not possible.id):
+                                    # print(possible.id, 'is not in:',
+                                    #      env.storage.get_simple_storage_state())
+                                    action = 'ORDER'
+                                    a_id = possible.id
+                                else:
+                                    # print(possible.id, 'was already ordered',
+                                    #      order.article.id)
+                                    pass
+
+            # TODO maybe delete idle?
+            # prio 4: do nothing
+            if(action == None):
+                action = 'IDLE'
+            [state, reward, game_over, debug] = env.step(action, a_id)
+            if env.game_over:
+                break
+        if i % 1000 == 0:
+            print('Episode ', i, ' reward is:',
+                  env.rewards.get_total_episode_reward())
+
+    env.rewards.print_final_reward_infos()
+    # env.rewards.plot_total_episode_rewards()
+    # env.rewards.plot_episode_rewards(1)
+
+    return env.rewards.all_episode_rewards
+
+
 if __name__ == '__main__':
+    def plot():
+        plt.plot(random_actions(5000), label='random')
+        plt.plot(q_function(5000), label='Q')
+        plt.plot(heuristic(5000), label='heur')
+        plt.legend()
+        plt.show()
+
+    plot()
+
     # random_actions()
-    q_function()
+    # q_function(50000)
+    # heuristic()
+
+
+# TODO add config seeds to reproduce (with params steps and episodes)
+# TODO improve qleraning ---> oracles? & random add oracles
+# TODO or try heuristic without oracles
