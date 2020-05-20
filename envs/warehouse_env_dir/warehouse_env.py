@@ -447,7 +447,8 @@ class Actions():
         elif action == 'ORDER':
             self.env.rewards.add_reward_action_order(self.order(article_id))
         elif action == 'IDLE':
-            print('idle this step....')
+            pass
+            #print('idle this step....')
 
     def action_random(self):
         return self.do_action(random.choice(self.actions))
@@ -474,8 +475,10 @@ class Actions():
 
 
 class Rewards():
-    def __init__(self):
+    def __init__(self, steps):
+        self.steps = steps
         self.all_episode_rewards = []
+        self.all_episode_rewards_per_step = []
         self.all_rewards_loop_storage = []
         self.all_rewards_loop_request_updates = []
         self.all_rewards_loop_arrival = []
@@ -495,6 +498,8 @@ class Rewards():
     def reset_episode(self):
         if self.step > 0:
             self.all_episode_rewards.append(self.total_episode_reward)
+            self.all_episode_rewards_per_step.append(
+                self.total_episode_reward/self.steps)
             self.all_rewards_loop_storage.append(self.rewards_loop_storage)
             self.all_rewards_loop_request_updates.append(
                 self.rewards_loop_request_updates)
@@ -710,7 +715,7 @@ log = Logger()
 class WarehouseEnv(gym.Env):
     def __init__(self, seed=None, max_requests=2, max_arrivals=1, storage_spaces=3, max_turns=50, simple_state=True):
         self.seed = seed
-        self.rewards = Rewards()
+        self.rewards = Rewards(max_turns)
         self.storage_spaces = storage_spaces
         self.max_requests = max_requests
         self.max_arrivals = max_arrivals
@@ -812,6 +817,7 @@ class WarehouseEnv(gym.Env):
     def _get_simple_state(self):
         # return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
         return self.storage.get_simple_storage_state()+self.requests.get_simple_requests_state() + self.arrivals.get_simple_arrivals_state()
+        #[0, 1, 3][1, 0][2, 0](art+1) ^ 7
 
     def get_possible_states(self):
         if self.simple_state:
@@ -854,9 +860,9 @@ class WarehouseEnv(gym.Env):
 
 
 # Random
-def random_actions(count=100):
+def random_actions(count=100, steps=1000):
     # env = WarehouseEnv(None, 2, 2, 3, 50)
-    env = WarehouseEnv(None, 2, 2, 3, 1000)
+    env = WarehouseEnv(None, 2, 2, 3, steps)
 
     num_ep = count
 
@@ -888,11 +894,11 @@ def random_actions(count=100):
     # env.rewards.plot_action_deliver(1)
     # env.rewards.plot_action_order(1)
     # env.rewards.plot_action_store(1)
-    return env.rewards.all_episode_rewards
+    return env.rewards.all_episode_rewards_per_step
 
 
 # Q Function
-def q_function(count=50000):
+def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
 
     def max_action(Q, state, actions):
         values = np.array([Q[state, a] for a in actions])
@@ -900,11 +906,11 @@ def q_function(count=50000):
         # print('best action is', action, actions[action])
         return actions[action]
 
-    env = WarehouseEnv(None, 2, 2, 3, 1000)
+    env = WarehouseEnv(None, 2, 2, 3, steps)
 
-    ALPHA = 0.1  # learningrate
-    GAMMA = 1.0
-    EPS = 1.0  # eps greedy action selection
+    ALPHA = alpha  # learningrate
+    GAMMA = gamma
+    EPS = eps  # eps greedy action selection
 
     # TODO init q here
     Q = {}
@@ -947,12 +953,12 @@ def q_function(count=50000):
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
 
-    print(Q)
+    # print(Q)
     env.rewards.print_final_reward_infos()
     # env.rewards.plot_total_episode_rewards()
     # env.rewards.plot_episode_rewards(1)
     # env.rewards.plot_episode_rewards(num_ep-1)
-    return env.rewards.all_episode_rewards
+    return env.rewards.all_episode_rewards_per_step
 
 
 # DQN
@@ -962,10 +968,10 @@ def q_function(count=50000):
 # Heuristic
 
 
-def heuristic(count=100):
+def heuristic(count=100, check=True, steps=1000):
     # env = WarehouseEnv(None, 2, 2, 3, 50)
-    env = WarehouseEnv(None, 2, 2, 3, 1000)
-
+    env = WarehouseEnv(None, 2, 2, 3, steps)
+    check_for_orders = check
     num_ep = count
 
     for i in range(num_ep):
@@ -999,20 +1005,24 @@ def heuristic(count=100):
                 # TODO least stored
                 for possible in env.possible_articles.articles:
                     if possible.id not in env.storage.get_simple_storage_state():
-                        if len(env.orders.orders) < 1:
+                        if(check_for_orders):
+                            if len(env.orders.orders) < 1:
+                                action = 'ORDER'
+                                a_id = possible.id
+                            else:
+                                for order in env.orders.orders:
+                                    if(order.article.id is not possible.id):
+                                        # print(possible.id, 'is not in:',
+                                        #      env.storage.get_simple_storage_state())
+                                        action = 'ORDER'
+                                        a_id = possible.id
+                                    else:
+                                        # print(possible.id, 'was already ordered',
+                                        #      order.article.id)
+                                        pass
+                        else:
                             action = 'ORDER'
                             a_id = possible.id
-                        else:
-                            for order in env.orders.orders:
-                                if(order.article.id is not possible.id):
-                                    # print(possible.id, 'is not in:',
-                                    #      env.storage.get_simple_storage_state())
-                                    action = 'ORDER'
-                                    a_id = possible.id
-                                else:
-                                    # print(possible.id, 'was already ordered',
-                                    #      order.article.id)
-                                    pass
 
             # TODO maybe delete idle?
             # prio 4: do nothing
@@ -1029,14 +1039,42 @@ def heuristic(count=100):
     # env.rewards.plot_total_episode_rewards()
     # env.rewards.plot_episode_rewards(1)
 
-    return env.rewards.all_episode_rewards
+    return env.rewards.all_episode_rewards_per_step
 
 
 if __name__ == '__main__':
     def plot():
+        # Test 1 heur vs q vs rand
         plt.plot(random_actions(5000), label='random')
-        plt.plot(q_function(5000), label='Q')
-        plt.plot(heuristic(5000), label='heur')
+        plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-g1')
+        plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
+        plt.plot(heuristic(5000), label='heur-true')
+        plt.plot(heuristic(5000, False), label='heur-false')
+
+        # Test 2 Q different step count / different episodes
+        #plt.plot(q_function(5000, 1000), label='Q5k-1k')
+        #plt.plot(q_function(10000), label='Q10k-1k')
+        #plt.plot(q_function(5000, 2000), label='Q5k-2k')
+
+        # Test 3 Alphas
+        #plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-a0.1')
+        #plt.plot(q_function(5000, 1000, 0.25), label='Q5k-1k-a0.25')
+        #plt.plot(q_function(5000, 1000, 0.5), label='Q5k-1k-a0.5')
+
+        # Test 4 Gammas
+        #plt.plot(q_function(5000, 1000, 0.1, 1), label='Q5k-1k-g1')
+        #plt.plot(q_function(5000, 1000, 0.1, 0.75), label='Q5k-1k-g0.75')
+        #plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
+
+        # Test 5 Epsilon
+        #plt.plot(q_function(5000, 1000, 0.1, 1, 1), label='Q5k-1k-e1')
+        #plt.plot(q_function(5000, 1000, 0.1, 1, 0.75), label='Q5k-1k-e0.75')
+        #plt.plot(q_function(5000, 1000, 0.1, 1, 0.5), label='Q5k-1k-e0.5')
+
+        # Test 6 Gamma with more steps/episodes
+
+        # Test 7 Epsilon with more steps/episodes
+
         plt.legend()
         plt.show()
 
