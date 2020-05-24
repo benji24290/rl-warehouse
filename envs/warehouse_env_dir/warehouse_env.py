@@ -420,7 +420,7 @@ if __name__ == '__main__':
         # plt.legend()
         # plt.show()
 
-        # test_prob()
+        test_prob()
 
     plot()
     # random_actions()
