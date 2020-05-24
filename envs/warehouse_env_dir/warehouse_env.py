@@ -1,14 +1,27 @@
-from envs.warehouse_env_dir.article import Article
-from envs.warehouse_env_dir.article_collection import ArticleCollection
-from envs.warehouse_env_dir.storage import Storage
-from envs.warehouse_env_dir.storage_space import StorageSpace
-from envs.warehouse_env_dir.actions import Actions
-from envs.warehouse_env_dir.arrivals import Arrivals
-from envs.warehouse_env_dir.arrival_space import ArrivalSpace
-from envs.warehouse_env_dir.requests import Requests
-from envs.warehouse_env_dir.orders import Orders
-from envs.warehouse_env_dir.rewards import Rewards
-from envs.warehouse_env_dir.logger import log
+try:
+    from envs.warehouse_env_dir.article import Article
+    from envs.warehouse_env_dir.article_collection import ArticleCollection
+    from envs.warehouse_env_dir.storage import Storage
+    from envs.warehouse_env_dir.storage_space import StorageSpace
+    from envs.warehouse_env_dir.actions import Actions
+    from envs.warehouse_env_dir.arrivals import Arrivals
+    from envs.warehouse_env_dir.arrival_space import ArrivalSpace
+    from envs.warehouse_env_dir.requests import Requests
+    from envs.warehouse_env_dir.orders import Orders
+    from envs.warehouse_env_dir.rewards import Rewards
+    from envs.warehouse_env_dir.logger import log
+except ModuleNotFoundError:
+    from article import Article
+    from article_collection import ArticleCollection
+    from storage import Storage
+    from storage_space import StorageSpace
+    from actions import Actions
+    from arrivals import Arrivals
+    from arrival_space import ArrivalSpace
+    from requests import Requests
+    from orders import Orders
+    from rewards import Rewards
+    from logger import log
 import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
@@ -361,14 +374,24 @@ def heuristic(count=100, check=True, steps=1000):
     return env.rewards.all_episode_rewards_per_step
 
 
+def test_prob():
+    arr = []
+    env = WarehouseEnv(None, 2, 2, 3, 1000)
+    for i in range(100):
+        arr.append(env.possible_articles.get_random_article_with_prob().id)
+    print(arr.count(1))
+    print(arr.count(2))
+    print(arr.count(3))
+
+
 if __name__ == '__main__':
     def plot():
         # Test 1 heur vs q vs rand
-        plt.plot(random_actions(5000), label='random')
-        plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-g1')
-        plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
-        plt.plot(heuristic(5000), label='heur-true')
-        plt.plot(heuristic(5000, False), label='heur-false')
+        #plt.plot(random_actions(5000), label='random')
+        #plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-g1')
+        #plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
+        #plt.plot(heuristic(5000), label='heur-true')
+        #plt.plot(heuristic(5000, False), label='heur-false')
 
         # Test 2 Q different step count / different episodes
         #plt.plot(q_function(5000, 1000), label='Q5k-1k')
@@ -396,6 +419,8 @@ if __name__ == '__main__':
 
         # plt.legend()
         # plt.show()
+
+        # test_prob()
 
     plot()
     # random_actions()

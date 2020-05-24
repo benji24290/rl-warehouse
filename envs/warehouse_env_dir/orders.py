@@ -1,4 +1,7 @@
-from envs.warehouse_env_dir.order import Order
+try:
+    from envs.warehouse_env_dir.order import Order
+except ModuleNotFoundError:
+    from order import Order
 
 
 class Orders():

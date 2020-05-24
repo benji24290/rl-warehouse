@@ -1,7 +1,12 @@
 import itertools
-from envs.warehouse_env_dir.arrival_space import ArrivalSpace
-from envs.warehouse_env_dir.logger import log
-from envs.warehouse_env_dir.consts import ORDER_POSITIVE_REWARD, ORDER_NEGATIVE_REWARD
+try:
+    from envs.warehouse_env_dir.arrival_space import ArrivalSpace
+    from envs.warehouse_env_dir.logger import log
+    from envs.warehouse_env_dir.consts import ORDER_POSITIVE_REWARD, ORDER_NEGATIVE_REWARD
+except ModuleNotFoundError:
+    from arrival_space import ArrivalSpace
+    from logger import log
+    from consts import ORDER_POSITIVE_REWARD, ORDER_NEGATIVE_REWARD
 
 
 class Arrivals():

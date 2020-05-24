@@ -1,5 +1,9 @@
-from envs.warehouse_env_dir.article import Article
-from envs.warehouse_env_dir.logger import log
+try:
+    from envs.warehouse_env_dir.article import Article
+    from envs.warehouse_env_dir.logger import log
+except ModuleNotFoundError:
+    from article import Article
+    from logger import log
 import random
 
 

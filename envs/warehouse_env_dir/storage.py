@@ -1,6 +1,11 @@
-from envs.warehouse_env_dir.storage_space import StorageSpace
-from envs.warehouse_env_dir.consts import INVENTORY_COST_FACTOR
-from envs.warehouse_env_dir.logger import log
+try:
+    from envs.warehouse_env_dir.storage_space import StorageSpace
+    from envs.warehouse_env_dir.consts import INVENTORY_COST_FACTOR
+    from envs.warehouse_env_dir.logger import log
+except ModuleNotFoundError:
+    from storage_space import StorageSpace
+    from consts import INVENTORY_COST_FACTOR
+    from logger import log
 
 
 class Storage():

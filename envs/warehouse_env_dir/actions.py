@@ -1,4 +1,7 @@
-from envs.warehouse_env_dir.logger import log
+try:
+    from envs.warehouse_env_dir.logger import log
+except ModuleNotFoundError:
+    from logger import log
 import random
 
 

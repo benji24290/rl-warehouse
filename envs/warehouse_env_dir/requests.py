@@ -1,6 +1,11 @@
-from envs.warehouse_env_dir.request import Request
-from envs.warehouse_env_dir.logger import log
-from envs.warehouse_env_dir.consts import REQUEST_EXPIRED_REWARD
+try:
+    from envs.warehouse_env_dir.request import Request
+    from envs.warehouse_env_dir.logger import log
+    from envs.warehouse_env_dir.consts import REQUEST_EXPIRED_REWARD
+except ModuleNotFoundError:
+    from request import Request
+    from logger import log
+    from consts import REQUEST_EXPIRED_REWARD
 
 
 class Requests():
