@@ -387,11 +387,11 @@ def test_prob():
 if __name__ == '__main__':
     def plot():
         # Test 1 heur vs q vs rand
-        #plt.plot(random_actions(5000), label='random')
-        #plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-g1')
-        #plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
-        #plt.plot(heuristic(5000), label='heur-true')
-        #plt.plot(heuristic(5000, False), label='heur-false')
+        plt.plot(random_actions(5000), label='random')
+        plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-g1')
+        plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
+        plt.plot(heuristic(5000), label='heur-true')
+        plt.plot(heuristic(5000, False), label='heur-false')
 
         # Test 2 Q different step count / different episodes
         #plt.plot(q_function(5000, 1000), label='Q5k-1k')
@@ -417,10 +417,9 @@ if __name__ == '__main__':
 
         # Test 7 Epsilon with more steps/episodes
 
-        # plt.legend()
-        # plt.show()
-
-        test_prob()
+        plt.legend()
+        plt.show()
+       # test_prob()
 
     plot()
     # random_actions()

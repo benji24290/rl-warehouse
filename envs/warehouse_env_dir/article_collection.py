@@ -15,11 +15,11 @@ class ArticleCollection():
 
     def _generate_articles(self):
         self.articles.append(
-            Article(1, 0.2, "Selten"))
+            Article(1, 0.1, "Selten"))
         self.articles.append(
             Article(2, 0.8,  "Häufig"))
         self.articles.append(
-            Article(3, 0.5,  "Normal"))
+            Article(3, 0.1,  "Normal"))
         log.info("Possible articles added")
 
     def get_possible_articles(self):
