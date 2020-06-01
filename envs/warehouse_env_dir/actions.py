@@ -8,6 +8,9 @@ import random
 class Actions():
     def __init__(self, env):
         self.actions = ['STORE', 'DELIVER', 'ORDER']
+        # TODO make this dynamic
+        self.actions_extended = ['STORE', 'DELIVER',
+                                 'ORDER_1', 'ORDER_2', 'ORDER_3']
         self.env = env
         self.action_reward = 0
 
@@ -64,6 +67,13 @@ class Actions():
                 self.deliver(article_id))
         elif action == 'ORDER':
             self.env.rewards.add_reward_action_order(self.order(article_id))
+            # TODO Remove and make dynamic
+        elif action == 'ORDER_1':
+            self.env.rewards.add_reward_action_order(self.order(1))
+        elif action == 'ORDER_2':
+            self.env.rewards.add_reward_action_order(self.order(2))
+        elif action == 'ORDER_3':
+            self.env.rewards.add_reward_action_order(self.order(3))
         elif action == 'IDLE':
             pass
             #print('idle this step....')
@@ -73,6 +83,9 @@ class Actions():
 
     def get_random_action(self):
         return random.choice(self.actions)
+
+    def get_random_action_extended(self):
+        return random.choice(self.actions_extended)
 
     def store_oracle(self):
         # TODO make store oracle inteligent

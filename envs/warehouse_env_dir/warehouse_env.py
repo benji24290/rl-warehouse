@@ -31,16 +31,6 @@ import random
 import sys
 
 
-# This reward values are the constant part and will be modified with distance
-ORDER_POSITIVE_REWARD = 10
-ORDER_NEGATIVE_REWARD = -50
-STORE_POSITIVE_REWARD = 10
-STORE_NEGATIVE_REWARD = -10
-DELIVER_POSITIVE_REWARD = 100
-DELIVER_NEGATIVE_REWARD = -100
-REQUEST_EXPIRED_REWARD = -50
-INVENTORY_COST_FACTOR = 1
-
 # TODO Add docstrings
 
 
@@ -149,7 +139,7 @@ class WarehouseEnv(gym.Env):
     def _get_simple_state(self):
         # return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
         return self.storage.get_simple_storage_state()+self.requests.get_simple_requests_state() + self.arrivals.get_simple_arrivals_state()
-        #[0, 1, 3][1, 0][2, 0](art+1) ^ 7
+        # [0, 1, 3][1, 0][2, 0](art+1) ^ 7
 
     def get_possible_states(self):
         if self.simple_state:
@@ -228,6 +218,21 @@ def random_actions(count=100, steps=1000):
     # env.rewards.plot_action_store(1)
     return env.rewards.all_episode_rewards_per_step
 
+# Helper
+
+
+def print_q_matrix(Q):
+    qvalues = []
+    for v in Q:
+        qvalues.append(Q[v])
+    # plt.imshow(qvalues, cmap='hot', interpolation='nearest')
+    while len(qvalues) < 49284:
+        qvalues.append(10)
+    narray = np.array(qvalues)
+    shaped = narray.reshape(222, 222)
+    plt.imshow(shaped, cmap='hot', interpolation='nearest')
+    plt.show()
+
 
 # Q Function
 def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
@@ -285,6 +290,70 @@ def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
 
+    # print_q_matrix(Q)
+
+    env.rewards.print_final_reward_infos()
+    # env.rewards.plot_total_episode_rewards()
+    # env.rewards.plot_episode_rewards(1)
+    # env.rewards.plot_episode_rewards(num_ep-1)
+    return env.rewards.all_episode_rewards_per_step
+
+
+def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
+
+    def max_action(Q, state, actions):
+        values = np.array([Q[state, a] for a in actions])
+        action = np.argmax(values)
+        # print('best action is', action, actions[action])
+        return actions[action]
+
+    env = WarehouseEnv(None, 2, 2, 3, steps)
+
+    ALPHA = alpha  # learningrate
+    GAMMA = gamma
+    EPS = eps  # eps greedy action selection
+
+    # TODO init q here
+    Q = {}
+    for state in env.get_possible_states():
+        # TODO add actions with articles
+        for action in env.actions.actions_extended:
+            Q[state, action] = 0
+
+    num_ep = count
+    total_rewards = np.zeros(num_ep)
+
+    for i in range(num_ep):
+        # Print all n episodes
+        if i % 1000 == 0:
+            print('starting episode', i)
+        done = False
+        observation = env.reset()
+        while not done:
+            # TODO seed?
+            rand = random.random()
+            action = max_action(Q, observation, env.actions.actions_extended) if rand < (1-EPS) \
+                else env.actions.get_random_action_extended()
+            observation_, reward, game_over, debug = env.step(action)
+
+            action_ = max_action(Q, observation_, env.actions.actions_extended)
+            # Update Q table
+            Q[observation, action] = Q[observation, action] + ALPHA*(reward +
+                                                                     GAMMA*Q[observation_, action_] - Q[observation, action])
+            observation = observation_
+
+            # linear decrease of epsilon
+            if EPS - 2 / num_ep > 0:
+                EPS -= 2 / num_ep
+            else:
+                EPS = 0
+
+            if env.game_over:
+                break
+        if i % 1000 == 0:
+            print('Episode ', i, ' reward is:',
+                  env.rewards.get_total_episode_reward())
+
     # print(Q)
     env.rewards.print_final_reward_infos()
     # env.rewards.plot_total_episode_rewards()
@@ -300,11 +369,31 @@ def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
 # Heuristic
 
 
-def heuristic(count=100, check=True, steps=1000):
+def heuristic(count=100, steps=1000, version='v1'):
     # env = WarehouseEnv(None, 2, 2, 3, 50)
+    if(version == 'v1'):
+        check_for_orders = False
+        can_idle = False
+    elif(version == 'v2'):
+        check_for_orders = True
+        can_idle = False
+    elif(version == 'v3'):
+        check_for_orders = False
+        can_idle = True
+    elif(version == 'v4'):
+        check_for_orders = True
+        can_idle = True
+    else:
+        raise Exception(version, 'is not a valid version')
+
     env = WarehouseEnv(None, 2, 2, 3, steps)
-    check_for_orders = check
     num_ep = count
+
+    Q = {}
+    for state in env.get_possible_states():
+        # TODO add actions with articles
+        for action in env.actions.actions:
+            Q[state, action] = 0
 
     for i in range(num_ep):
         # Print all n episodes
@@ -320,7 +409,7 @@ def heuristic(count=100, check=True, steps=1000):
             for req in env.requests.requests:
                 for space in env.storage.storage_spaces:
                     if req.article == space.article and action == None:
-                        #print('deliver:', req.article.name, space.article.name)
+                        # print('deliver:', req.article.name, space.article.name)
                         action = 'DELIVER'
                         a_id = req.article.id
             # prio 2: store articles from arrival
@@ -358,19 +447,23 @@ def heuristic(count=100, check=True, steps=1000):
 
             # TODO maybe delete idle?
             # prio 4: do nothing
-            if(action == None):
-                action = 'IDLE'
+            if(can_idle):
+                if(action == None):
+                    action = 'IDLE'
+            else:
+                action = random.choice(env.actions.actions)
+            Q[env.get_state(), action] = 100
             [state, reward, game_over, debug] = env.step(action, a_id)
             if env.game_over:
                 break
         if i % 1000 == 0:
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
-
+    # print_q_matrix(Q)
     env.rewards.print_final_reward_infos()
     # env.rewards.plot_total_episode_rewards()
     # env.rewards.plot_episode_rewards(1)
-
+    # env.rewards.plot_episode_rewards(num_ep-1)
     return env.rewards.all_episode_rewards_per_step
 
 
@@ -384,44 +477,75 @@ def test_prob():
     print(arr.count(3))
 
 
+def smoothList(list, degree=10):
+    smoothed = [0]*(len(list)-degree+1)
+    for i in range(len(smoothed)):
+        smoothed[i] = sum(list[i:i+degree])/float(degree)
+    return smoothed
+
+
 if __name__ == '__main__':
-    def plot():
+    def tests():
         # Test 1 heur vs q vs rand
-        plt.plot(random_actions(5000), label='random')
-        plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-g1')
-        plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
-        plt.plot(heuristic(5000), label='heur-true')
-        plt.plot(heuristic(5000, False), label='heur-false')
+        # plt.plot(random_actions(5000), label='random')
+        # plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-g1')
+        # plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
+        # plt.plot(heuristic(5000), label='heur-true')
+        # plt.plot(heuristic(5000, False), label='heur-false')
 
         # Test 2 Q different step count / different episodes
-        #plt.plot(q_function(5000, 1000), label='Q5k-1k')
-        #plt.plot(q_function(10000), label='Q10k-1k')
-        #plt.plot(q_function(5000, 2000), label='Q5k-2k')
+        # plt.plot(q_function(5000, 1000), label='Q5k-1k')
+        # plt.plot(q_function(10000), label='Q10k-1k')
+        # plt.plot(q_function(5000, 2000), label='Q5k-2k')
 
         # Test 3 Alphas
-        #plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-a0.1')
-        #plt.plot(q_function(5000, 1000, 0.25), label='Q5k-1k-a0.25')
-        #plt.plot(q_function(5000, 1000, 0.5), label='Q5k-1k-a0.5')
+        # plt.plot(q_function(5000, 1000, 0.1), label='Q5k-1k-a0.1')
+        # plt.plot(q_function(5000, 1000, 0.25), label='Q5k-1k-a0.25')
+        # plt.plot(q_function(5000, 1000, 0.5), label='Q5k-1k-a0.5')
 
         # Test 4 Gammas
-        #plt.plot(q_function(5000, 1000, 0.1, 1), label='Q5k-1k-g1')
-        #plt.plot(q_function(5000, 1000, 0.1, 0.75), label='Q5k-1k-g0.75')
-        #plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
+        # plt.plot(q_function(5000, 1000, 0.1, 1), label='Q5k-1k-g1')
+        # plt.plot(q_function(5000, 1000, 0.1, 0.75), label='Q5k-1k-g0.75')
+        # plt.plot(q_function(5000, 1000, 0.1, 0.5), label='Q5k-1k-g0.5')
 
         # Test 5 Epsilon
-        #plt.plot(q_function(5000, 1000, 0.1, 1, 1), label='Q5k-1k-e1')
-        #plt.plot(q_function(5000, 1000, 0.1, 1, 0.75), label='Q5k-1k-e0.75')
-        #plt.plot(q_function(5000, 1000, 0.1, 1, 0.5), label='Q5k-1k-e0.5')
+        # plt.plot(q_function(5000, 1000, 0.1, 1, 1), label='Q5k-1k-e1')
+        # plt.plot(q_function(5000, 1000, 0.1, 1, 0.75), label='Q5k-1k-e0.75')
+        # plt.plot(q_function(5000, 1000, 0.1, 1, 0.5), label='Q5k-1k-e0.5')
 
         # Test 6 Gamma with more steps/episodes
 
         # Test 7 Epsilon with more steps/episodes
 
+        # Test 8 normal q vs q with extended
+        # plt.plot(q_function(15000, 2000), label='Q5k-1k-g1')
+        # plt.plot(q_function_extended_order(15000, 2000),
+                 # label='Q5k-1k-g1-extended-order')
+
+        # Test 9
+        # q_function(5000)
+        # q_function_extended_order(5000)
+        # heuristic(5000, False)
+
+        # plt.plot(smoothList(random_actions(5000),
+                            # degree = 400), label='random')
+        # plt.plot(smoothList(q_function(5000), degree=400), label='Q5k-1k-g1')
+        plt.plot(smoothList(heuristic(5000, version='v1'),
+                            degree=400), label='heur-v1')
+        plt.plot(smoothList(heuristic(5000, version='v2'),
+                            degree=400), label='heur-v2')
+        plt.plot(smoothList(heuristic(5000, version='v3'),
+                            degree=400), label='heur-v3')
+        plt.plot(smoothList(heuristic(5000, version='v4'),
+                            degree=400), label='heur-v4')
+
         plt.legend()
         plt.show()
-       # test_prob()
+        # test_prob()
+        # q_function(5000)
+        # heuristic(5000, False)
 
-    plot()
+    tests()
     # random_actions()
     # q_function(50000)
     # heuristic()
