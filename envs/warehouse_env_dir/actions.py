@@ -11,6 +11,8 @@ class Actions():
         # TODO make this dynamic
         self.actions_extended = ['STORE', 'DELIVER',
                                  'ORDER_1', 'ORDER_2', 'ORDER_3']
+        self.actions_with_idle = ['STORE', 'DELIVER',
+                                  'ORDER',  'IDLE']
         self.env = env
         self.action_reward = 0
 
@@ -86,6 +88,9 @@ class Actions():
 
     def get_random_action_extended(self):
         return random.choice(self.actions_extended)
+
+    def get_random_action_with_idle(self):
+        return random.choice(self.actions_with_idle)
 
     def store_oracle(self):
         # TODO make store oracle inteligent

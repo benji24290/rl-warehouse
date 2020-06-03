@@ -68,6 +68,16 @@ class Rewards():
     def add_reward_action_order(self, reward):
         self.rewards_action_order.append(reward)
 
+    def get_pos_neg_rewards(self, array):
+        pos = 0
+        neg = 0
+        for v in array:
+            if v > 0:
+                pos += 1
+            elif (v < 0):
+                neg -= 1
+        return [pos, neg]
+
     def calculate_step_reward(self):
         self.step_reward = 0
         self.step_reward += self.get_step_reward_of_array(
@@ -197,3 +207,88 @@ class Rewards():
             for episode in self.all_rewards_action_order:
                 plt.plot(episode)
         plt.show()
+
+    def get_loop_storage_pnr(self):
+        pos = []
+        neg = []
+        for arr in self.all_rewards_loop_storage:
+            pos.append(self.get_pos_neg_rewards(arr)[0])
+            neg.append(self.get_pos_neg_rewards(arr)[1])
+        return [pos, neg]
+
+    def get_loot_request_updates_pnr(self):
+        pos = []
+        neg = []
+        for arr in self.all_rewards_loop_request_updates:
+            pos.append(self.get_pos_neg_rewards(arr)[0])
+            neg.append(self.get_pos_neg_rewards(arr)[1])
+        return [pos, neg]
+
+    def get_loop_arrival_pnr(self):
+        pos = []
+        neg = []
+        for arr in self.all_rewards_loop_arrival:
+            pos.append(self.get_pos_neg_rewards(arr)[0])
+            neg.append(self.get_pos_neg_rewards(arr)[1])
+        return [pos, neg]
+
+    def get_action_deliver_pnr(self):
+        pos = []
+        neg = []
+        for arr in self.all_rewards_action_deliver:
+            pos.append(self.get_pos_neg_rewards(arr)[0])
+            neg.append(self.get_pos_neg_rewards(arr)[1])
+        return [pos, neg]
+
+    def get_action_store_pnr(self):
+        pos = []
+        neg = []
+        for arr in self.all_rewards_action_store:
+            pos.append(self.get_pos_neg_rewards(arr)[0])
+            neg.append(self.get_pos_neg_rewards(arr)[1])
+        return [pos, neg]
+
+    def get_action_order_pnr(self):
+        pos = []
+        neg = []
+        for arr in self.all_rewards_action_order:
+            pos.append(self.get_pos_neg_rewards(arr)[0])
+            neg.append(self.get_pos_neg_rewards(arr)[1])
+        return [pos, neg]
+
+    def plot_pos_neg_rewards(self, name='Pos-Neg Rewards'):
+        plt.title = name
+        plt.ylabel('Rewards')
+        plt.xlabel('Episodes')
+        plt.plot(
+            self.smoothList(self.get_loop_storage_pnr()[0], 400), label='l_storage_p', color='blue')
+        plt.plot(
+            self.smoothList(self.get_loop_storage_pnr()[1], 400), label='l_storage_n', color='blue', linestyle='dashed')
+        plt.plot(
+            self.smoothList(self.get_loot_request_updates_pnr()[0], 400), label='l_request_p', color='orange')
+        plt.plot(
+            self.smoothList(self.get_loot_request_updates_pnr()[1], 400), label='l_request_n', color='orange', linestyle='dashed')
+        plt.plot(
+            self.smoothList(self.get_loop_arrival_pnr()[0], 400), label='l_arrival_p', color='red')
+        plt.plot(
+            self.smoothList(self.get_loop_arrival_pnr()[1], 400), label='l_arrival_n', color='red', linestyle='dashed')
+        plt.plot(
+            self.smoothList(self.get_action_deliver_pnr()[0], 400), label='a_deliver_p', color='green')
+        plt.plot(
+            self.smoothList(self.get_action_deliver_pnr()[1], 400), label='a_deliver_n', color='green', linestyle='dashed')
+        plt.plot(
+            self.smoothList(self.get_action_store_pnr()[0], 400), label='a_store_p', color='purple')
+        plt.plot(
+            self.smoothList(self.get_action_store_pnr()[1], 400), label='a_store_n', color='purple', linestyle='dashed')
+        plt.plot(
+            self.smoothList(self.get_action_order_pnr()[0], 400), label='a_order_p', color='pink')
+        plt.plot(
+            self.smoothList(self.get_action_order_pnr()[1], 400), label='a_order_n', color='pink', linestyle='dashed')
+        plt.legend()
+        plt.show()
+
+    def smoothList(self, list, degree=10):
+        smoothed = [0]*(len(list)-degree+1)
+        for i in range(len(smoothed)):
+            smoothed[i] = sum(list[i:i+degree])/float(degree)
+        return smoothed
