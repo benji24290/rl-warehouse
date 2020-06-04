@@ -261,29 +261,29 @@ class Rewards():
         plt.ylabel('Rewards')
         plt.xlabel('Episodes')
         plt.plot(
-            self.smoothList(self.get_loop_storage_pnr()[0], 400), label='l_storage_p', color='blue')
+            self.get_loop_storage_pnr()[0], label='l_storage_p', color='blue')
         plt.plot(
-            self.smoothList(self.get_loop_storage_pnr()[1], 400), label='l_storage_n', color='blue', linestyle='dashed')
+            self.get_loop_storage_pnr()[1], label='l_storage_n', color='blue', linestyle='dashed')
         plt.plot(
-            self.smoothList(self.get_loot_request_updates_pnr()[0], 400), label='l_request_p', color='orange')
+            self.get_loot_request_updates_pnr()[0], label='l_request_p', color='orange')
         plt.plot(
-            self.smoothList(self.get_loot_request_updates_pnr()[1], 400), label='l_request_n', color='orange', linestyle='dashed')
+            self.get_loot_request_updates_pnr()[1], label='l_request_n', color='orange', linestyle='dashed')
         plt.plot(
-            self.smoothList(self.get_loop_arrival_pnr()[0], 400), label='l_arrival_p', color='red')
+            self.get_loop_arrival_pnr()[0], label='l_arrival_p', color='red')
         plt.plot(
-            self.smoothList(self.get_loop_arrival_pnr()[1], 400), label='l_arrival_n', color='red', linestyle='dashed')
+            self.get_loop_arrival_pnr()[1], label='l_arrival_n', color='red', linestyle='dashed')
         plt.plot(
-            self.smoothList(self.get_action_deliver_pnr()[0], 400), label='a_deliver_p', color='green')
+            self.get_action_deliver_pnr()[0], label='a_deliver_p', color='green')
         plt.plot(
-            self.smoothList(self.get_action_deliver_pnr()[1], 400), label='a_deliver_n', color='green', linestyle='dashed')
+            self.get_action_deliver_pnr()[1], label='a_deliver_n', color='green', linestyle='dashed')
         plt.plot(
-            self.smoothList(self.get_action_store_pnr()[0], 400), label='a_store_p', color='purple')
+            self.get_action_store_pnr()[0], label='a_store_p', color='purple')
         plt.plot(
-            self.smoothList(self.get_action_store_pnr()[1], 400), label='a_store_n', color='purple', linestyle='dashed')
+            self.get_action_store_pnr()[1], label='a_store_n', color='purple', linestyle='dashed')
         plt.plot(
-            self.smoothList(self.get_action_order_pnr()[0], 400), label='a_order_p', color='pink')
+            self.get_action_order_pnr()[0], label='a_order_p', color='pink')
         plt.plot(
-            self.smoothList(self.get_action_order_pnr()[1], 400), label='a_order_n', color='pink', linestyle='dashed')
+            self.get_action_order_pnr()[1], label='a_order_n', color='pink', linestyle='dashed')
         plt.legend()
         plt.show()
 

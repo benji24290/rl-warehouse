@@ -29,6 +29,7 @@ import gym
 import itertools
 import random
 import sys
+import math
 
 
 # TODO Add docstrings
@@ -95,7 +96,9 @@ class WarehouseEnv(gym.Env):
 
         # generate requests
         # TODO add counter in request to only gen %2 turn or with prob.
-        self.requests.generate_request(self.possible_articles)
+        # 1x turn order, 1xturn store, 2xturn arrival
+        if(self.turn % 5 == 0):
+            self.requests.generate_request(self.possible_articles)
 
         # handle arrivals
         # self.action_reward += self.handle_arrivals(self.orders.update_orders())
@@ -182,9 +185,9 @@ class WarehouseEnv(gym.Env):
 
 
 # Random
-def random_actions(count=100, steps=1000):
+def random_actions(count=100, steps=1000, seed=None):
     # env = WarehouseEnv(None, 2, 2, 3, 50)
-    env = WarehouseEnv(None, 2, 2, 3, steps)
+    env = WarehouseEnv(seed, 2, 2, 3, steps)
 
     num_ep = count
 
@@ -226,16 +229,17 @@ def print_q_matrix(Q):
     for v in Q:
         qvalues.append(Q[v])
     # plt.imshow(qvalues, cmap='hot', interpolation='nearest')
-    while len(qvalues) < 49284:
+    dim = math.ceil(math.sqrt(len(qvalues)))
+    while len(qvalues) < dim**2:
         qvalues.append(10)
     narray = np.array(qvalues)
-    shaped = narray.reshape(222, 222)
+    shaped = narray.reshape(dim, dim)
     plt.imshow(shaped, cmap='hot', interpolation='nearest')
     plt.show()
 
 
 # Q Function
-def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
+def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None):
 
     def max_action(Q, state, actions):
         values = np.array([Q[state, a] for a in actions])
@@ -243,7 +247,7 @@ def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
         # print('best action is', action, actions[action])
         return actions[action]
 
-    env = WarehouseEnv(None, 2, 2, 3, steps)
+    env = WarehouseEnv(seed, 2, 2, 3, steps)
 
     ALPHA = alpha  # learningrate
     GAMMA = gamma
@@ -299,7 +303,7 @@ def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
     return env.rewards
 
 
-def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
+def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None):
 
     def max_action(Q, state, actions):
         values = np.array([Q[state, a] for a in actions])
@@ -307,7 +311,7 @@ def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps
         # print('best action is', action, actions[action])
         return actions[action]
 
-    env = WarehouseEnv(None, 2, 2, 3, steps)
+    env = WarehouseEnv(seed, 2, 2, 3, steps)
 
     ALPHA = alpha  # learningrate
     GAMMA = gamma
@@ -362,7 +366,7 @@ def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps
     return env.rewards
 
 
-def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0):
+def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None):
 
     def max_action(Q, state, actions):
         values = np.array([Q[state, a] for a in actions])
@@ -370,7 +374,7 @@ def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0)
         # print('best action is', action, actions[action])
         return actions[action]
 
-    env = WarehouseEnv(None, 2, 2, 3, steps)
+    env = WarehouseEnv(seed, 2, 2, 3, steps)
 
     ALPHA = alpha  # learningrate
     GAMMA = gamma
@@ -418,7 +422,7 @@ def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0)
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
 
-    # print(Q)
+    # print_q_matrix(Q)
     env.rewards.print_final_reward_infos()
     # env.rewards.plot_total_episode_rewards()
     # env.rewards.plot_episode_rewards(1)
@@ -434,7 +438,7 @@ def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0)
 # Heuristic
 
 
-def heuristic(count=100, steps=1000, version='v1'):
+def heuristic(count=100, steps=1000, version='v1', seed=None):
     # env = WarehouseEnv(None, 2, 2, 3, 50)
     if(version == 'v1'):
         check_for_orders = False
@@ -451,7 +455,7 @@ def heuristic(count=100, steps=1000, version='v1'):
     else:
         raise Exception(version, 'is not a valid version')
 
-    env = WarehouseEnv(None, 2, 2, 3, steps)
+    env = WarehouseEnv(seed, 2, 2, 3, steps)
     num_ep = count
 
     Q = {}
@@ -585,7 +589,7 @@ if __name__ == '__main__':
         # Test 8 normal q vs q with extended
         # plt.plot(q_function(15000, 2000).all_episode_rewards_per_step, label='Q5k-1k-g1')
         # plt.plot(q_function_extended_order(15000, 2000).all_episode_rewards_per_step,
-                 # label='Q5k-1k-g1-extended-order')
+        # label='Q5k-1k-g1-extended-order')
 
         # Test 9
         # q_function(5000)
@@ -593,7 +597,7 @@ if __name__ == '__main__':
         # heuristic(5000, False)
 
         # plt.plot(smoothList(random_actions(5000).all_episode_rewards_per_step,
-                            # degree = 400), label='random')
+        # degree = 400), label='random')
         # plt.plot(smoothList(q_function(5000).all_episode_rewards_per_step, degree=400), label='Q5k-1k-g1')
 
         # Test all 10
@@ -616,36 +620,112 @@ if __name__ == '__main__':
 
         # Test 11 only one ART!
         if(True):
-            rew_h_v1 = heuristic(5000, version='v1')
-            rew_h_v2 = heuristic(5000, version='v2')
-            rew_h_v3 = heuristic(5000, version='v3')
-            rew_h_v4 = heuristic(5000, version='v4')
-            rew_q = q_function(5000)
-            rew_q_w_i = q_function_with_idle(5000)
 
-            plt.plot(smoothList(rew_h_v1.all_episode_rewards_per_step,
-                                degree=400), label='heur-v1')
-            plt.plot(smoothList(rew_h_v2.all_episode_rewards_per_step,
-                                degree=400), label='heur-v2')
-            plt.plot(smoothList(rew_h_v3.all_episode_rewards_per_step,
-                                degree=400), label='heur-v3')
-            plt.plot(smoothList(rew_h_v4.all_episode_rewards_per_step,
-                                degree=400), label='heur-v4')
+            rew_q_w_i_a0_1 = q_function_with_idle(100, 1000, 0.1,  seed=1234)
+            rew_h_v1 = heuristic(100, version='v1', seed=1234)
+            rew_h_v2 = heuristic(100, version='v2', seed=1234)
+            rew_h_v3 = heuristic(100, version='v3', seed=1234)
+            rew_h_v4 = heuristic(100, version='v4', seed=1234)
 
-            plt.plot(smoothList(rew_q.all_episode_rewards_per_step,
-                                degree=400), label='q')
-            plt.plot(smoothList(rew_q_w_i.all_episode_rewards_per_step,
-                                degree=400), label='q-idle')
+            plt.plot(rew_q_w_i_a0_1.all_episode_rewards_per_step,
+                     label='q-idle-a0.1')
+            plt.plot(rew_h_v1.all_episode_rewards_per_step, label='h-v1')
+            plt.plot(rew_h_v2.all_episode_rewards_per_step, label='h-v2')
+            plt.plot(rew_h_v3.all_episode_rewards_per_step, label='h-v3')
+            plt.plot(rew_h_v4.all_episode_rewards_per_step, label='h-v4')
 
             plt.legend()
             plt.show()
 
-            rew_h_v1.plot_pos_neg_rewards(name='heur-v1')
-            rew_h_v2.plot_pos_neg_rewards(name='heur-v2')
-            rew_h_v3.plot_pos_neg_rewards(name='heur-v3')
-            rew_h_v4.plot_pos_neg_rewards(name='heur-v4')
-            rew_q.plot_pos_neg_rewards(name='q')
-            rew_q_w_i.plot_pos_neg_rewards(name='q-idle')
+            rew_q_w_i_a0_1.plot_pos_neg_rewards(name='q-idle-a0.1')
+            rew_q_w_i_a0_1.plot_episode_rewards(99)
+            rew_h_v1.plot_episode_rewards(99)
+            rew_h_v2.plot_episode_rewards(99)
+            rew_h_v3.plot_episode_rewards(99)
+            rew_h_v4.plot_episode_rewards(99)
+
+        #rew_q_w_i_a0_1 = q_function_with_idle(100, 1000, 0.1,  seed=1234)
+        #rew_h_v4 = heuristic(100, version='v4', seed=1234)
+
+        # Test 12 one art get best alpha -> validate with 100 seeds
+        if(False):
+            '''
+            plt.plot(q_function_with_idle(100, 1000, 1, seed=1234).all_episode_rewards_per_step,
+                     label='q-a1')
+            plt.plot(q_function_with_idle(100, 1000, 0.9, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.9')
+            plt.plot(q_function_with_idle(100, 1000, 0.8, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.8')
+            plt.plot(q_function_with_idle(100, 1000, 0.7, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.7')
+            plt.plot(q_function_with_idle(100, 1000, 0.6, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.6')
+            plt.plot(q_function_with_idle(100, 1000, 0.5, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.5')
+            plt.plot(q_function_with_idle(100, 1000, 0.4, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.4')
+            plt.plot(q_function_with_idle(100, 1000, 0.3, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.3')
+            plt.plot(q_function_with_idle(100, 1000, 0.2, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.2')
+            plt.plot(q_function_with_idle(100, 1000, 0.1, seed=1234).all_episode_rewards_per_step,
+                     label='q-a0.1')
+                     '''
+            a1 = []
+            a2 = []
+            a3 = []
+            a4 = []
+            a5 = []
+            a6 = []
+            a7 = []
+            a8 = []
+            a9 = []
+            a10 = []
+
+            for i in range(100):
+                a1.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.1, seed=i**2).all_episode_rewards_per_step))
+                a2.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.2, seed=i**2).all_episode_rewards_per_step))
+                a3.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.3, seed=i**2).all_episode_rewards_per_step))
+                a4.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.4, seed=i**2).all_episode_rewards_per_step))
+                a5.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.5, seed=i**2).all_episode_rewards_per_step))
+                a6.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.6, seed=i**2).all_episode_rewards_per_step))
+                a7.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.7, seed=i**2).all_episode_rewards_per_step))
+                a8.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.8, seed=i**2).all_episode_rewards_per_step))
+                a9.append(np.mean(q_function_with_idle(
+                    100, 1000, 0.9, seed=i**2).all_episode_rewards_per_step))
+                a10.append(np.mean(q_function_with_idle(
+                    100, 1000, 1, seed=i**2).all_episode_rewards_per_step))
+
+            plt.plot(a1, label='q-a1')
+            plt.plot(a2, label='q-a2')
+            plt.plot(a3, label='q-a3')
+            plt.plot(a4, label='q-a4')
+            plt.plot(a5, label='q-a5')
+            plt.plot(a6, label='q-a6')
+            plt.plot(a7, label='q-a7')
+            plt.plot(a8, label='q-a8')
+            plt.plot(a9, label='q-a9')
+            plt.plot(a10, label='q-a10')
+            print('Mean a1:', np.mean(a1))
+            print('Mean a2:', np.mean(a2))
+            print('Mean a3:', np.mean(a3))
+            print('Mean a4:', np.mean(a4))
+            print('Mean a5:', np.mean(a5))
+            print('Mean a6:', np.mean(a6))
+            print('Mean a7:', np.mean(a7))
+            print('Mean a8:', np.mean(a8))
+            print('Mean a8:', np.mean(a9))
+            print('Mean a10:', np.mean(a10))
+            plt.legend()
+            plt.show()
 
         # test_prob()
         # q_function(5000)
