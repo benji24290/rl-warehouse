@@ -7,13 +7,15 @@ import random
 
 class Actions():
     def __init__(self, env):
+        self.env = env
         self.actions = ['STORE', 'DELIVER', 'ORDER']
-        # TODO make this dynamic
-        self.actions_extended = ['STORE', 'DELIVER',
-                                 'ORDER_1', 'ORDER_2', 'ORDER_3']
+        self.actions_extended = ['STORE', 'DELIVER',  'IDLE']
+        action_count = len(self.env.possible_articles.articles)
+        for i in range(action_count):
+            self.actions_extended.append('ORDER_'+str(i+1))
+        print(self.actions_extended)
         self.actions_with_idle = ['STORE', 'DELIVER',
                                   'ORDER',  'IDLE']
-        self.env = env
         self.action_reward = 0
 
     def store(self, article_id, storage_pos=None):
@@ -78,7 +80,7 @@ class Actions():
             self.env.rewards.add_reward_action_order(self.order(3))
         elif action == 'IDLE':
             pass
-            #print('idle this step....')
+            # print('idle this step....')
 
     def action_random(self):
         return self.do_action(random.choice(self.actions))

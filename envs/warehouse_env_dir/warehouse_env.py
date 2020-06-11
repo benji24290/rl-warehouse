@@ -97,7 +97,7 @@ class WarehouseEnv(gym.Env):
         # generate requests
         # TODO add counter in request to only gen %2 turn or with prob.
         # 1x turn order, 1xturn store, 2xturn arrival
-        if(self.turn % 5 == 0):
+        if(self.turn % 3 == 0):
             self.requests.generate_request(self.possible_articles)
 
         # handle arrivals
@@ -494,22 +494,30 @@ def heuristic(count=100, steps=1000, version='v1', seed=None):
             if(action == None):
                 # TODO least stored
                 for possible in env.possible_articles.articles:
-                    if possible.id not in env.storage.get_simple_storage_state():
+                    empty_spaces_storage_arrival = env.storage.get_simple_storage_state().count(
+                        0)+env.arrivals.get_simple_arrivals_state().count(0)
+                    if (possible.id not in env.storage.get_simple_storage_state() and empty_spaces_storage_arrival > 0):
+
                         if(check_for_orders):
-                            if len(env.orders.orders) < 1:
-                                action = 'ORDER'
-                                a_id = possible.id
+                            if(empty_spaces_storage_arrival-len(env.orders.orders) > 0):
+                                if len(env.orders.orders) < 1:
+                                    action = 'ORDER'
+                                    a_id = possible.id
+                                else:
+                                    for order in env.orders.orders:
+                                        if(order.article.id is not possible.id):
+                                            # print(possible.id, 'is not in:',
+                                            #      env.storage.get_simple_storage_state())
+                                            action = 'ORDER'
+                                            a_id = possible.id
+                                        else:
+                                            # print(possible.id, 'was already ordered',
+                                            #      order.article.id)
+                                            pass
                             else:
-                                for order in env.orders.orders:
-                                    if(order.article.id is not possible.id):
-                                        # print(possible.id, 'is not in:',
-                                        #      env.storage.get_simple_storage_state())
-                                        action = 'ORDER'
-                                        a_id = possible.id
-                                    else:
-                                        # print(possible.id, 'was already ordered',
-                                        #      order.article.id)
-                                        pass
+                                # print('empty=', empty_spaces_storage_arrival,
+                                #     'open orders=', len(env.orders.orders))
+                                pass
                         else:
                             action = 'ORDER'
                             a_id = possible.id
@@ -619,30 +627,82 @@ if __name__ == '__main__':
                                 degree=400), label='q-idle')
 
         # Test 11 only one ART!
-        if(True):
+        if(False):
 
-            rew_q_w_i_a0_1 = q_function_with_idle(100, 1000, 0.1,  seed=1234)
-            rew_h_v1 = heuristic(100, version='v1', seed=1234)
-            rew_h_v2 = heuristic(100, version='v2', seed=1234)
-            rew_h_v3 = heuristic(100, version='v3', seed=1234)
-            rew_h_v4 = heuristic(100, version='v4', seed=1234)
+            rew_q_w_i_a0_1 = q_function_with_idle(10000, 1000, 0.1,  seed=1234)
+            rew_q_e = q_function_extended_order(10000, 1000, 0.1,  seed=1234)
+            rew_h_v1 = heuristic(10000, version='v1', seed=1234)
+            rew_h_v2 = heuristic(10000, version='v2', seed=1234)
+            rew_h_v3 = heuristic(10000, version='v3', seed=1234)
+            rew_h_v4 = heuristic(10000, version='v4', seed=1234)
 
-            plt.plot(rew_q_w_i_a0_1.all_episode_rewards_per_step,
+            plt.plot(smoothList(rew_q_w_i_a0_1.all_episode_rewards_per_step,
+                                degree=400),
                      label='q-idle-a0.1')
-            plt.plot(rew_h_v1.all_episode_rewards_per_step, label='h-v1')
-            plt.plot(rew_h_v2.all_episode_rewards_per_step, label='h-v2')
-            plt.plot(rew_h_v3.all_episode_rewards_per_step, label='h-v3')
-            plt.plot(rew_h_v4.all_episode_rewards_per_step, label='h-v4')
+            plt.plot(smoothList(rew_q_e.all_episode_rewards_per_step,
+                                degree=400),
+                     label='q-ext')
+            plt.plot(smoothList(rew_h_v1.all_episode_rewards_per_step,
+                                degree=400), label='h-v1')
+            plt.plot(smoothList(rew_h_v2.all_episode_rewards_per_step,
+                                degree=400), label='h-v2')
+            plt.plot(smoothList(rew_h_v3.all_episode_rewards_per_step,
+                                degree=400), label='h-v3')
+            plt.plot(smoothList(rew_h_v4.all_episode_rewards_per_step,
+                                degree=400), label='h-v4')
 
             plt.legend()
             plt.show()
 
             rew_q_w_i_a0_1.plot_pos_neg_rewards(name='q-idle-a0.1')
-            rew_q_w_i_a0_1.plot_episode_rewards(99)
-            rew_h_v1.plot_episode_rewards(99)
-            rew_h_v2.plot_episode_rewards(99)
-            rew_h_v3.plot_episode_rewards(99)
-            rew_h_v4.plot_episode_rewards(99)
+            rew_q_e.plot_pos_neg_rewards(name='q-idle-a0.1')
+            rew_q_w_i_a0_1.plot_episode_rewards(999)
+            rew_q_e.plot_episode_rewards(999)
+            rew_h_v1.plot_episode_rewards(999)
+            rew_h_v2.plot_episode_rewards(999)
+            rew_h_v3.plot_episode_rewards(999)
+            rew_h_v4.plot_episode_rewards(999)
+
+        # Test 11-2 only one ART!
+        if(False):
+
+            rew_q_w_i_a0_1 = q_function_with_idle(
+                10000, 1000, 0.1,  seed=1234)
+            rew_q_e = q_function_extended_order(10000, 1000, 0.1,  seed=1234)
+            rew_h_v4 = heuristic(10000, version='v4', seed=1234)
+            rew_h_v3 = heuristic(10000, version='v3', seed=1234)
+
+            plt.plot(smoothList(rew_q_w_i_a0_1.all_episode_rewards_per_step,
+                                degree=400),
+                     label='q-idle-a0.1')
+            plt.plot(smoothList(rew_q_e.all_episode_rewards_per_step,
+                                degree=400),
+                     label='q-ext')
+            plt.plot(smoothList(rew_h_v3.all_episode_rewards_per_step,
+                                degree=400), label='h-v3')
+            plt.plot(smoothList(rew_h_v4.all_episode_rewards_per_step,
+                                degree=400), label='h-v4')
+
+            plt.legend()
+            plt.show()
+
+            rew_q_w_i_a0_1.plot_pos_neg_rewards(name='q-idle-a0.1')
+            rew_q_e.plot_pos_neg_rewards(name='q-idle-a0.1')
+            rew_q_w_i_a0_1.plot_episode_rewards(999)
+            rew_q_e.plot_episode_rewards(999)
+            rew_h_v3.plot_episode_rewards(999)
+            rew_h_v4.plot_episode_rewards(999)
+
+        if(True):
+            rew_q_e = q_function_extended_order(100000, 1000, 0.1,  seed=1234)
+            plt.plot(smoothList(rew_q_e.all_episode_rewards_per_step,
+                                degree=400),
+                     label='q-ext')
+            plt.legend()
+            plt.show()
+
+            rew_q_e.plot_pos_neg_rewards(name='q-ext-a0.1')
+            rew_q_e.plot_episode_rewards(999)
 
         #rew_q_w_i_a0_1 = q_function_with_idle(100, 1000, 0.1,  seed=1234)
         #rew_h_v4 = heuristic(100, version='v4', seed=1234)
@@ -726,7 +786,6 @@ if __name__ == '__main__':
             print('Mean a10:', np.mean(a10))
             plt.legend()
             plt.show()
-
         # test_prob()
         # q_function(5000)
         # heuristic(5000, False)
