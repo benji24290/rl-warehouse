@@ -262,14 +262,13 @@ def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None
                                                                      GAMMA*Q[observation_, action_] - Q[observation, action])
             observation = observation_
 
-            # linear decrease of epsilon
-            if EPS - 2 / num_ep > 0:
-                EPS -= 2 / num_ep
-            else:
-                EPS = 0
-
             if env.game_over:
                 break
+        # linear decrease of epsilon
+        if EPS - 2 / num_ep > 0:
+            EPS -= 2 / num_ep
+        else:
+            EPS = 0
         if i % 1000 == 0:
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
@@ -327,14 +326,15 @@ def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps
                                                                      GAMMA*Q[observation_, action_] - Q[observation, action])
             observation = observation_
 
-            # linear decrease of epsilon
-            if EPS - 2 / num_ep > 0:
-                EPS -= 2 / num_ep
-            else:
-                EPS = 0
-
             if env.game_over:
                 break
+
+        # linear decrease of epsilon
+        if EPS - 2 / num_ep > 0:
+            EPS -= 2 / num_ep
+        else:
+            EPS = 0
+
         if i % 1000 == 0:
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
@@ -393,14 +393,14 @@ def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0,
                                                                      GAMMA*Q[observation_, action_] - Q[observation, action])
             observation = observation_
 
-            # linear decrease of epsilon
-            if EPS - 2 / num_ep > 0:
-                EPS -= 2 / num_ep
-            else:
-                EPS = 0
-
             if env.game_over:
                 break
+
+        # linear decrease of epsilon
+        if EPS - 2 / num_ep > 0:
+            EPS -= 2 / num_ep
+        else:
+            EPS = 0
         if i % 1000 == 0:
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
@@ -698,9 +698,11 @@ if __name__ == '__main__':
         if(True):
             # TODO comment in in requests
             rew_q_e = q_function_extended_order(
-                10000, 100, 0.1,  seed=1234, steps_to_request=4)
+                500000, 100, 0.1,  seed=1234, steps_to_request=4)
             rew_q_e_order = q_function_extended_order(
-                10000, 100, 0.1,  seed=1234, simple_state=False, steps_to_request=4)
+                500000, 100, 0.1,  seed=1234, simple_state=False, steps_to_request=4)
+            rew_h_v3 = heuristic(1000, 100, version='v3',
+                                 seed=1234,  steps_to_request=4)
             rew_h_v4 = heuristic(1000, 100, version='v4',
                                  seed=1234,  steps_to_request=4)
             plt.xlabel('Epochen')
@@ -711,17 +713,20 @@ if __name__ == '__main__':
             plt.plot(rew_q_e_order.get_smooth_all_episode_rewards_per_step(),
                      label='q-func-v2')
             plt.plot(
-                rew_h_v4.get_smooth_all_episode_rewards_per_step(), label='heur')
+                rew_h_v3.get_smooth_all_episode_rewards_per_step(), label='heur-v3')
+            plt.plot(
+                rew_h_v4.get_smooth_all_episode_rewards_per_step(), label='heur-v4')
             plt.legend()
             plt.show()
 
-            rew_q_e.print_q_matrix()
+            # rew_q_e.print_q_matrix()
+            # rew_q_e_order.print_q_matrix()
             # rew_q_e_order.print_q_matrix()
 
             rew_q_e.plot_pos_neg_rewards(name='q-ext-a0.1')
             rew_q_e_order.plot_pos_neg_rewards(name='q-ext-a0.1-order')
-            rew_q_e.plot_episode_rewards(9800, name='Q-Function')
-            rew_q_e_order.plot_episode_rewards(9800, name='Q-Function V2')
+            rew_q_e.plot_episode_rewards(498000, name='Q-Function')
+            rew_q_e_order.plot_episode_rewards(498000, name='Q-Function V2')
             rew_h_v4.plot_episode_rewards(980, name='Heuristik')
 
         # rew_q_w_i_a0_1 = q_function_with_idle(100, 1000, 0.1,  seed=1234)
