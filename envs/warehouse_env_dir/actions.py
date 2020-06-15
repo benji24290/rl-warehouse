@@ -13,7 +13,6 @@ class Actions():
         action_count = len(self.env.possible_articles.articles)
         for i in range(action_count):
             self.actions_extended.append('ORDER_'+str(i+1))
-        print(self.actions_extended)
         self.actions_with_idle = ['STORE', 'DELIVER',
                                   'ORDER',  'IDLE']
         self.action_reward = 0
@@ -46,11 +45,11 @@ class Actions():
         return -100
 
     def order(self, article_id):
-        self.env.orders.new_order(
+        rew = self.env.orders.new_order(
             self.env.possible_articles.get_article_by_id(article_id))
         log.info('order:', 'order, now there ',
                  len(self.env.orders.orders), ' orders')
-        return 0
+        return rew
 
     def do_action(self, action, article_id=None):
         '''Performs specified action, if article_id is None a random id will be generated. Does not return anything, the reward will be added to the env.reward'''

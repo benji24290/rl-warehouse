@@ -5,6 +5,7 @@ except ModuleNotFoundError:
 
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 
 
 class Rewards():
@@ -27,6 +28,7 @@ class Rewards():
         self.rewards_action_deliver = []
         self.rewards_action_store = []
         self.rewards_action_order = []
+        self.q = None
 
     def reset_episode(self):
         if self.step > 0:
@@ -118,15 +120,20 @@ class Rewards():
             log.debug('get_step_reward_of_array:', 'no index')
             return 0
 
+    def get_smooth_all_episode_rewards_per_step(self):
+        return self.smoothList(self.all_episode_rewards_per_step)
+
     def plot_total_episode_rewards(self):
         '''Plots the total reward for each episode'''
         self.reset_episode()
         plt.plot(self.all_episode_rewards)
         plt.show()
 
-    def plot_episode_rewards(self, episode):
+    def plot_episode_rewards(self, episode, name='Episode rewards'):
         '''Plots the all rewards for a given episode'''
         self.reset_episode()
+        plt.xlabel('Steps')
+        plt.ylabel('Reward')
         try:
             plt.plot(
                 self.all_rewards_loop_storage[episode], label='l_storage')
@@ -138,7 +145,8 @@ class Rewards():
             plt.plot(self.all_rewards_action_store[episode], label='a_store')
             plt.plot(self.all_rewards_action_order[episode], label='a_order')
         except:
-            log.error('plot_episode_rewards:', 'no valid episode', episode)
+            log.error('plot_episode_rewards:', 'no valid episode', episode,
+                      'there are', len(self.all_rewards_action_order), 'episodes')
         plt.legend()
         plt.show()
 
@@ -261,34 +269,95 @@ class Rewards():
         plt.ylabel('Rewards')
         plt.xlabel('Episodes')
         plt.plot(
-            self.get_loop_storage_pnr()[0], label='l_storage_p', color='blue')
+            self.smoothList(self.get_loop_storage_pnr()[0]), label='l_storage_p', color='blue')
         plt.plot(
-            self.get_loop_storage_pnr()[1], label='l_storage_n', color='blue', linestyle='dashed')
+            self.smoothList(self.get_loop_storage_pnr()[1]), label='l_storage_n', color='blue', linestyle='dashed')
         plt.plot(
-            self.get_loot_request_updates_pnr()[0], label='l_request_p', color='orange')
+            self.smoothList(self.get_loot_request_updates_pnr()[0]), label='l_request_p', color='orange')
         plt.plot(
-            self.get_loot_request_updates_pnr()[1], label='l_request_n', color='orange', linestyle='dashed')
+            self.smoothList(self.get_loot_request_updates_pnr()[1]), label='l_request_n', color='orange', linestyle='dashed')
         plt.plot(
-            self.get_loop_arrival_pnr()[0], label='l_arrival_p', color='red')
+            self.smoothList(self.get_loop_arrival_pnr()[0]), label='l_arrival_p', color='red')
         plt.plot(
-            self.get_loop_arrival_pnr()[1], label='l_arrival_n', color='red', linestyle='dashed')
+            self.smoothList(self.get_loop_arrival_pnr()[1]), label='l_arrival_n', color='red', linestyle='dashed')
         plt.plot(
-            self.get_action_deliver_pnr()[0], label='a_deliver_p', color='green')
+            self.smoothList(self.get_action_deliver_pnr()[0]), label='a_deliver_p', color='green')
         plt.plot(
-            self.get_action_deliver_pnr()[1], label='a_deliver_n', color='green', linestyle='dashed')
+            self.smoothList(self.get_action_deliver_pnr()[1]), label='a_deliver_n', color='green', linestyle='dashed')
         plt.plot(
-            self.get_action_store_pnr()[0], label='a_store_p', color='purple')
+            self.smoothList(self.get_action_store_pnr()[0]), label='a_store_p', color='purple')
         plt.plot(
-            self.get_action_store_pnr()[1], label='a_store_n', color='purple', linestyle='dashed')
+            self.smoothList(self.get_action_store_pnr()[1]), label='a_store_n', color='purple', linestyle='dashed')
         plt.plot(
-            self.get_action_order_pnr()[0], label='a_order_p', color='pink')
+            self.smoothList(self.get_action_order_pnr()[0]), label='a_order_p', color='pink')
         plt.plot(
-            self.get_action_order_pnr()[1], label='a_order_n', color='pink', linestyle='dashed')
+            self.smoothList(self.get_action_order_pnr()[1]), label='a_order_n', color='pink', linestyle='dashed')
         plt.legend()
         plt.show()
 
-    def smoothList(self, list, degree=10):
-        smoothed = [0]*(len(list)-degree+1)
-        for i in range(len(smoothed)):
-            smoothed[i] = sum(list[i:i+degree])/float(degree)
-        return smoothed
+    def smoothList(self, list, x=100):
+        if(len(list) > x):
+            ratio = int(len(list)/x)
+            smoothed = [0]*(x)
+            for i in range(len(smoothed)):
+                pos = i*ratio
+                smoothed[i] = sum(list[pos:pos+ratio])/float(ratio)
+            return smoothed
+        return list
+
+    def set_q(self, q):
+        self.q = q
+
+    def print_q_matrix_reshaped(self):
+        if(self.q):
+            qvalues = []
+            for v in self.q:
+                qvalues.append(self.q[v])
+            # plt.imshow(qvalues, cmap='hot', interpolation='nearest')
+            dim = math.ceil(math.sqrt(len(qvalues)))
+            while len(qvalues) < dim**2:
+                qvalues.append(10)
+            narray = np.array(qvalues)
+            shaped = narray.reshape(dim, dim)
+            plt.imshow(shaped, cmap='hot', interpolation='nearest')
+            plt.show()
+        else:
+            log.error('print_q_matrix:', 'no q')
+
+    def print_q_matrix(self):
+        if(self.q):
+            im = {}
+            actions = []
+            states = []
+            for v in self.q:
+                try:
+                    im[v[1]].append(self.q[v])
+                    states.append(v[0])
+                except:
+                    states = []
+                    states.append(v[0])
+                    im[v[1]] = []
+                    actions.append(v[1])
+                    im[v[1]].append(self.q[v])
+            img = []
+            for arr in im:
+                img.append(im[arr])
+            fig, ax = plt.subplots()
+            i = ax.imshow(img)
+            ax.set_yticks(np.arange(len(img)))
+            ax.set_xticks(np.arange(len(img[0])))
+            ax.set_xticklabels(states)
+            ax.set_yticklabels(actions)
+            plt.setp(ax.get_xticklabels(), rotation=45, ha="right",
+                     rotation_mode="anchor")
+            for i in range(len(img)):
+                for j in range(len(img[0])):
+                    ax.text(j, i, "{:10.2f}".format(img[i][j]),
+                            ha="center", va="center", color="w")
+
+            # plt.imshow(img, origin='lower', interpolation='None', cmap='viridis')
+            ax.set_title("Q-Table")
+            fig.tight_layout()
+            plt.show()
+        else:
+            log.error('print_q_matrix:', 'no q')

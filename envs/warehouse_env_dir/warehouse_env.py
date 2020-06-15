@@ -36,13 +36,14 @@ import math
 
 
 class WarehouseEnv(gym.Env):
-    def __init__(self, seed=None, max_requests=2, max_arrivals=1, storage_spaces=3, max_turns=50, simple_state=True):
+    def __init__(self, seed=None, max_requests=2, max_arrivals=1, storage_spaces=3, max_turns=50, steps_to_request=3, simple_state=True):
         self.seed = seed
         self.rewards = Rewards(max_turns)
         self.storage_spaces = storage_spaces
         self.max_requests = max_requests
         self.max_arrivals = max_arrivals
         self.max_turns = max_turns
+        self.steps_to_request = steps_to_request
         self.simple_state = simple_state
         self.turn = 0
         self.game_over = False
@@ -51,7 +52,6 @@ class WarehouseEnv(gym.Env):
         random.seed(self.seed)
         print('Env initialized seed:', self.seed)
         self._make_new_instances()
-        self._add_test_values()
         self._print_env_state()
 
     def step(self, action=None, article_id=None):
@@ -95,9 +95,8 @@ class WarehouseEnv(gym.Env):
             self.requests.update_requests())
 
         # generate requests
-        # TODO add counter in request to only gen %2 turn or with prob.
         # 1x turn order, 1xturn store, 2xturn arrival
-        if(self.turn % 3 == 0):
+        if(self.turn % self.steps_to_request == 0):
             self.requests.generate_request(self.possible_articles)
 
         # handle arrivals
@@ -137,10 +136,10 @@ class WarehouseEnv(gym.Env):
 
     def _get_extended_state(self):
         # return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
-        return self.storage.get_storage_state() + self.requests.get_requests_state() + self.arrivals.get_arrivals_state()
+        return self.storage.get_simple_storage_state() + self.requests.get_simple_requests_state() + self.arrivals.get_simple_arrivals_state()+self.orders.get_simple_orders_state()
+        # [0, 1, 3][1, 0][2, 0][1, 0](art+1) ^ 9
 
     def _get_simple_state(self):
-        # return [self.storage.get_storage_state(), self.requests.get_requests_state(), self.arrivals.get_arrivals_state()]
         return self.storage.get_simple_storage_state()+self.requests.get_simple_requests_state() + self.arrivals.get_simple_arrivals_state()
         # [0, 1, 3][1, 0][2, 0](art+1) ^ 7
 
@@ -150,10 +149,16 @@ class WarehouseEnv(gym.Env):
         return self._get_extendet_possible_states()
 
     def _get_extendet_possible_states(self):
-        # TODO generate possible states
-        pass
-        # self.storage.get_possible_storage_states() + self.requests.get_possible_requests_states() + \
-        #   self.arrivals.get_possible_arrivals_states()
+        state_elements = self.max_requests + self.max_arrivals + \
+            self.storage_spaces + self.orders.max_orders
+        possible_states = tuple(
+            range(len(self.possible_articles.get_possible_articles())+1))
+        arrays = []
+        for i in range(state_elements):
+            arrays.append(possible_states)
+        cp = list(product(*arrays))
+        print('There are', len(cp), 'possible states')
+        return cp
 
     def _get_simple_possible_states(self):
         state_elements = self.max_requests + self.max_arrivals + self.storage_spaces
@@ -173,15 +178,6 @@ class WarehouseEnv(gym.Env):
         self.storage = Storage(self.storage_spaces)
         self.actions = Actions(self)
         self.orders = Orders()
-
-    def _add_test_values(self):
-        # Storage article
-        self.storage.store(Article(3, 0.5,  "Normal"), 2)
-        # New request
-        self.requests.generate_request(self.possible_articles)
-        self.requests.generate_request(self.possible_articles)
-        # New element in arrival
-        self.arrivals.add_article_to_arrival(Article(2, 0.5,  "Normal"))
 
 
 # Random
@@ -220,22 +216,6 @@ def random_actions(count=100, steps=1000, seed=None):
     # env.rewards.plot_action_order(1)
     # env.rewards.plot_action_store(1)
     return env.rewards
-
-# Helper
-
-
-def print_q_matrix(Q):
-    qvalues = []
-    for v in Q:
-        qvalues.append(Q[v])
-    # plt.imshow(qvalues, cmap='hot', interpolation='nearest')
-    dim = math.ceil(math.sqrt(len(qvalues)))
-    while len(qvalues) < dim**2:
-        qvalues.append(10)
-    narray = np.array(qvalues)
-    shaped = narray.reshape(dim, dim)
-    plt.imshow(shaped, cmap='hot', interpolation='nearest')
-    plt.show()
 
 
 # Q Function
@@ -293,7 +273,7 @@ def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None
         if i % 1000 == 0:
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
-
+    env.rewards.set_q(Q)
     # print_q_matrix(Q)
 
     env.rewards.print_final_reward_infos()
@@ -303,7 +283,7 @@ def q_function(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None
     return env.rewards
 
 
-def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None):
+def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None, steps_to_request=3, simple_state=True):
 
     def max_action(Q, state, actions):
         values = np.array([Q[state, a] for a in actions])
@@ -311,7 +291,8 @@ def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps
         # print('best action is', action, actions[action])
         return actions[action]
 
-    env = WarehouseEnv(seed, 2, 2, 3, steps)
+    env = WarehouseEnv(seed, 2, 2, 3, steps,
+                       steps_to_request=steps_to_request, simple_state=simple_state)
 
     ALPHA = alpha  # learningrate
     GAMMA = gamma
@@ -358,6 +339,7 @@ def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
 
+    env.rewards.set_q(Q)
     # print(Q)
     env.rewards.print_final_reward_infos()
     # env.rewards.plot_total_episode_rewards()
@@ -366,7 +348,7 @@ def q_function_extended_order(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps
     return env.rewards
 
 
-def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None):
+def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0, seed=None, steps_to_request=3):
 
     def max_action(Q, state, actions):
         values = np.array([Q[state, a] for a in actions])
@@ -374,7 +356,8 @@ def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0,
         # print('best action is', action, actions[action])
         return actions[action]
 
-    env = WarehouseEnv(seed, 2, 2, 3, steps)
+    env = WarehouseEnv(seed, 2, 2, 3, steps,
+                       steps_to_request=steps_to_request)
 
     ALPHA = alpha  # learningrate
     GAMMA = gamma
@@ -422,6 +405,7 @@ def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0,
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
 
+    env.rewards.set_q(Q)
     # print_q_matrix(Q)
     env.rewards.print_final_reward_infos()
     # env.rewards.plot_total_episode_rewards()
@@ -438,7 +422,8 @@ def q_function_with_idle(count=50000, steps=1000, alpha=0.1, gamma=1.0, eps=1.0,
 # Heuristic
 
 
-def heuristic(count=100, steps=1000, version='v1', seed=None):
+def heuristic(count=100, steps=1000, version='v1', seed=None, steps_to_request=3, simple_state=True):
+    # TODO Remove simple state, useless
     # env = WarehouseEnv(None, 2, 2, 3, 50)
     if(version == 'v1'):
         check_for_orders = False
@@ -455,7 +440,8 @@ def heuristic(count=100, steps=1000, version='v1', seed=None):
     else:
         raise Exception(version, 'is not a valid version')
 
-    env = WarehouseEnv(seed, 2, 2, 3, steps)
+    env = WarehouseEnv(seed, 2, 2, 3, steps,
+                       steps_to_request=steps_to_request, simple_state=simple_state)
     num_ep = count
 
     Q = {}
@@ -521,8 +507,6 @@ def heuristic(count=100, steps=1000, version='v1', seed=None):
                         else:
                             action = 'ORDER'
                             a_id = possible.id
-
-            # TODO maybe delete idle?
             # prio 4: do nothing
             if(can_idle):
                 if(action == None):
@@ -536,6 +520,8 @@ def heuristic(count=100, steps=1000, version='v1', seed=None):
         if i % 1000 == 0:
             print('Episode ', i, ' reward is:',
                   env.rewards.get_total_episode_reward())
+
+    env.rewards.set_q(Q)
     # print_q_matrix(Q)
     env.rewards.print_final_reward_infos()
     # env.rewards.plot_total_episode_rewards()
@@ -552,13 +538,6 @@ def test_prob():
     print(arr.count(1))
     print(arr.count(2))
     print(arr.count(3))
-
-
-def smoothList(list, degree=10):
-    smoothed = [0]*(len(list)-degree+1)
-    for i in range(len(smoothed)):
-        smoothed[i] = sum(list[i:i+degree])/float(degree)
-    return smoothed
 
 
 if __name__ == '__main__':
@@ -610,21 +589,21 @@ if __name__ == '__main__':
 
         # Test all 10
         if(False):
-            plt.plot(smoothList(heuristic(5000, version='v1').all_episode_rewards_per_step,
-                                degree=400), label='heur-v1')
-            plt.plot(smoothList(heuristic(5000, version='v2').all_episode_rewards_per_step,
-                                degree=400), label='heur-v2')
-            plt.plot(smoothList(heuristic(5000, version='v3').all_episode_rewards_per_step,
-                                degree=400), label='heur-v3')
-            plt.plot(smoothList(heuristic(5000, version='v4').all_episode_rewards_per_step,
-                                degree=400), label='heur-v4')
+            plt.plot(
+                heuristic(5000, version='v1').all_episode_rewards_per_step, label='heur-v1')
+            plt.plot(
+                heuristic(5000, version='v2').all_episode_rewards_per_step, label='heur-v2')
+            plt.plot(
+                heuristic(5000, version='v3').all_episode_rewards_per_step, label='heur-v3')
+            plt.plot(
+                heuristic(5000, version='v4').all_episode_rewards_per_step, label='heur-v4')
 
-            plt.plot(smoothList(q_function(5000).all_episode_rewards_per_step,
-                                degree=400), label='q')
+            plt.plot(q_function(
+                5000).all_episode_rewards_per_step, label='q')
             # plt.plot(smoothList(q_function_extended_order(5000),
             #                    degree=400), label='q-extended')
-            plt.plot(smoothList(q_function_with_idle(5000).all_episode_rewards_per_step,
-                                degree=400), label='q-idle')
+            plt.plot(q_function_with_idle(
+                5000).all_episode_rewards_per_step, label='q-idle')
 
         # Test 11 only one ART!
         if(False):
@@ -636,20 +615,18 @@ if __name__ == '__main__':
             rew_h_v3 = heuristic(10000, version='v3', seed=1234)
             rew_h_v4 = heuristic(10000, version='v4', seed=1234)
 
-            plt.plot(smoothList(rew_q_w_i_a0_1.all_episode_rewards_per_step,
-                                degree=400),
+            plt.plot(rew_q_w_i_a0_1.all_episode_rewards_per_step,
                      label='q-idle-a0.1')
-            plt.plot(smoothList(rew_q_e.all_episode_rewards_per_step,
-                                degree=400),
+            plt.plot(rew_q_e.all_episode_rewards_per_step,
                      label='q-ext')
-            plt.plot(smoothList(rew_h_v1.all_episode_rewards_per_step,
-                                degree=400), label='h-v1')
-            plt.plot(smoothList(rew_h_v2.all_episode_rewards_per_step,
-                                degree=400), label='h-v2')
-            plt.plot(smoothList(rew_h_v3.all_episode_rewards_per_step,
-                                degree=400), label='h-v3')
-            plt.plot(smoothList(rew_h_v4.all_episode_rewards_per_step,
-                                degree=400), label='h-v4')
+            plt.plot(
+                rew_h_v1.all_episode_rewards_per_step, label='h-v1')
+            plt.plot(
+                rew_h_v2.all_episode_rewards_per_step, label='h-v2')
+            plt.plot(
+                rew_h_v3.all_episode_rewards_per_step, label='h-v3')
+            plt.plot(
+                rew_h_v4.all_episode_rewards_per_step, label='h-v4')
 
             plt.legend()
             plt.show()
@@ -672,16 +649,14 @@ if __name__ == '__main__':
             rew_h_v4 = heuristic(10000, version='v4', seed=1234)
             rew_h_v3 = heuristic(10000, version='v3', seed=1234)
 
-            plt.plot(smoothList(rew_q_w_i_a0_1.all_episode_rewards_per_step,
-                                degree=400),
+            plt.plot(rew_q_w_i_a0_1.all_episode_rewards_per_step,
                      label='q-idle-a0.1')
-            plt.plot(smoothList(rew_q_e.all_episode_rewards_per_step,
-                                degree=400),
+            plt.plot(rew_q_e.all_episode_rewards_per_step,
                      label='q-ext')
-            plt.plot(smoothList(rew_h_v3.all_episode_rewards_per_step,
-                                degree=400), label='h-v3')
-            plt.plot(smoothList(rew_h_v4.all_episode_rewards_per_step,
-                                degree=400), label='h-v4')
+            plt.plot(
+                rew_h_v3.all_episode_rewards_per_step, label='h-v3')
+            plt.plot(
+                rew_h_v4.all_episode_rewards_per_step, label='h-v4')
 
             plt.legend()
             plt.show()
@@ -693,19 +668,64 @@ if __name__ == '__main__':
             rew_h_v3.plot_episode_rewards(999)
             rew_h_v4.plot_episode_rewards(999)
 
-        if(True):
-            rew_q_e = q_function_extended_order(100000, 1000, 0.1,  seed=1234)
-            plt.plot(smoothList(rew_q_e.all_episode_rewards_per_step,
-                                degree=400),
-                     label='q-ext')
+        # Test Summary 1 One-Art---3Steps to request
+        if(False):
+            rew_q_e = q_function_extended_order(
+                10000, 100, 0.1,  seed=1234, steps_to_request=3)
+            rew_q_e_order = q_function_extended_order(
+                10000, 100, 0.1,  seed=1234, simple_state=False, steps_to_request=3)
+            rew_h_v4 = heuristic(10000, 100, version='v4',
+                                 seed=1234,  steps_to_request=3)
+            plt.xlabel('Epochen')
+            plt.ylabel('∅-Reward pro Step')
+            plt.title('Bestellung alle 4 Steps')
+            plt.plot(rew_q_e.get_smooth_all_episode_rewards_per_step(),
+                     label='q-func')
+            plt.plot(rew_q_e_order.get_smooth_all_episode_rewards_per_step(),
+                     label='q-func-v2')
+            plt.plot(
+                rew_h_v4.get_smooth_all_episode_rewards_per_step(), label='heur')
             plt.legend()
             plt.show()
 
             rew_q_e.plot_pos_neg_rewards(name='q-ext-a0.1')
-            rew_q_e.plot_episode_rewards(999)
+            rew_q_e_order.plot_pos_neg_rewards(name='q-ext-a0.1-order')
+            rew_q_e.plot_episode_rewards(9800, name='Q-Function')
+            rew_q_e_order.plot_episode_rewards(9800, name='Q-Function V2')
+            rew_h_v4.plot_episode_rewards(9800, name='Heuristik')
 
-        #rew_q_w_i_a0_1 = q_function_with_idle(100, 1000, 0.1,  seed=1234)
-        #rew_h_v4 = heuristic(100, version='v4', seed=1234)
+        # Test Summary 1 One-Art---4Steps to request
+        if(True):
+            # TODO comment in in requests
+            rew_q_e = q_function_extended_order(
+                10000, 100, 0.1,  seed=1234, steps_to_request=4)
+            rew_q_e_order = q_function_extended_order(
+                10000, 100, 0.1,  seed=1234, simple_state=False, steps_to_request=4)
+            rew_h_v4 = heuristic(1000, 100, version='v4',
+                                 seed=1234,  steps_to_request=4)
+            plt.xlabel('Epochen')
+            plt.ylabel('∅-Reward pro Step')
+            plt.title('Bestellung alle 4 Steps')
+            plt.plot(rew_q_e.get_smooth_all_episode_rewards_per_step(),
+                     label='q-func')
+            plt.plot(rew_q_e_order.get_smooth_all_episode_rewards_per_step(),
+                     label='q-func-v2')
+            plt.plot(
+                rew_h_v4.get_smooth_all_episode_rewards_per_step(), label='heur')
+            plt.legend()
+            plt.show()
+
+            rew_q_e.print_q_matrix()
+            # rew_q_e_order.print_q_matrix()
+
+            rew_q_e.plot_pos_neg_rewards(name='q-ext-a0.1')
+            rew_q_e_order.plot_pos_neg_rewards(name='q-ext-a0.1-order')
+            rew_q_e.plot_episode_rewards(9800, name='Q-Function')
+            rew_q_e_order.plot_episode_rewards(9800, name='Q-Function V2')
+            rew_h_v4.plot_episode_rewards(980, name='Heuristik')
+
+        # rew_q_w_i_a0_1 = q_function_with_idle(100, 1000, 0.1,  seed=1234)
+        # rew_h_v4 = heuristic(100, version='v4', seed=1234)
 
         # Test 12 one art get best alpha -> validate with 100 seeds
         if(False):
