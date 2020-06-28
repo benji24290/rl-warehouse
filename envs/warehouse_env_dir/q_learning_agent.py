@@ -305,11 +305,11 @@ def q_learning_agent(config, count=100000,  alpha=0.1, gamma=1.0, eps=1.0, linea
 
     n, bins, patches = plt.hist(x=count_list,
                                 bins=num_bins, density=True)
-    #print(n, bins, patches)
+    # print(n, bins, patches)
     # print(unreached_pairs)
-    #print(len(count_list), '0:', count_list.count(0), '1:', count_list.count(1))
+    # print(len(count_list), '0:', count_list.count(0), '1:', count_list.count(1))
     # plt.show()
-    #plt.bar(['100', '1000', '10000'], n)
+    # plt.bar(['100', '1000', '10000'], n)
     # plt.show()
     # plt.plot(td_deltas)
     # plt.plot(count_unreached)
@@ -323,19 +323,19 @@ def q_learning_agent(config, count=100000,  alpha=0.1, gamma=1.0, eps=1.0, linea
     # env.rewards.plot_episode_rewards(num_ep-1)
     return env.rewards
 
-
-matplotlib.style.use('ggplot')
+# TODO remove
+# matplotlib.style.use('ggplot')
 
 
 def createEpsilonGreedyPolicy(Q, epsilon, num_actions):
-    """ 
-    Creates an epsilon-greedy policy based 
-    on a given Q-function and epsilon. 
+    """
+    Creates an epsilon-greedy policy based
+    on a given Q-function and epsilon.
 
-    Returns a function that takes the state 
-    as an input and returns the probabilities 
-    for each action in the form of a numpy array  
-    of length of the action space(set of possible actions). 
+    Returns a function that takes the state
+    as an input and returns the probabilities
+    for each action in the form of a numpy array
+    of length of the action space(set of possible actions).
     """
     def policyFunction(state):
 
@@ -350,10 +350,10 @@ def createEpsilonGreedyPolicy(Q, epsilon, num_actions):
 
 
 def qLearning(config, num_episodes, discount_factor=1.0,
-              alpha=0.6, epsilon=0.1):
-    """ 
-    Q-Learning algorithm: Off-policy TD control. 
-    Finds the optimal greedy policy while improving 
+              alpha=0.6, epsilon=0.5):
+    """
+    Q-Learning algorithm: Off-policy TD control.
+    Finds the optimal greedy policy while improving
     following an epsilon-greedy policy"""
     env = WarehouseEnv(config)
     num_actions = len(env.actions.actions_extended)
@@ -370,15 +370,14 @@ def qLearning(config, num_episodes, discount_factor=1.0,
     # Create an epsilon greedy policy function
     # appropriately for environment action space
     policy = createEpsilonGreedyPolicy(Q, epsilon, num_actions)
+    td_deltas = []
+    q_values_count = []
 
     # For every episode
     for ith_episode in range(num_episodes):
 
         # Reset the environment and pick the first action
         state = env.reset()
-        if ith_episode % 1000 == 0:
-            print('Episode ', ith_episode, ' reward is:',
-                  env.rewards.get_total_episode_reward())
 
         for t in itertools.count():
 
@@ -405,12 +404,117 @@ def qLearning(config, num_episodes, discount_factor=1.0,
                 Q[next_state][best_next_action]
             td_delta = td_target - \
                 Q[state][action]
+            td_deltas.append(td_delta)
             Q[state][action] += alpha * td_delta
+            q_values_count.append(len(Q.items()))
 
             # done is True if episode terminated
             if done:
                 break
 
             state = next_state
+
+        if ith_episode % 1000 == 0:
+            print('Episode ', ith_episode, ' reward is:',
+                  env.rewards.get_total_episode_reward())
+
+    plt.plot(td_deltas)
+    plt.plot(q_values_count)
+    plt.show()
+
     plotting.plot_episode_stats(stats)
     return env.rewards
+
+
+def qLearning_continuous(config, num_episodes, discount_factor=1.0,
+                         alpha=0.1, epsilon=0.1):
+    """
+    Q-Learning algorithm: Off-policy TD control.
+    Finds the optimal greedy policy while improving
+    following an epsilon-greedy policy"""
+    env = WarehouseEnv(config)
+    num_actions = len(env.actions.actions_extended)
+    # Action value function
+    # A nested dictionary that maps
+    # state -> (action -> action-value).
+    Q = defaultdict(lambda: np.zeros(num_actions))
+
+    # Keeps track of useful statistics
+    stats = plotting.EpisodeStats(
+        episode_lengths=np.zeros(num_episodes),
+        episode_rewards=np.zeros(num_episodes))
+
+    # Create an epsilon greedy policy function
+    # appropriately for environment action space
+    policy = createEpsilonGreedyPolicy(Q, epsilon, num_actions)
+    td_deltas = []
+    q_values_count = []
+    rewards = []
+
+    # For every episode
+    for ith_episode in range(num_episodes):
+
+        # Reset the environment and pick the first action
+        state = env.reset()
+
+        for t in itertools.count():
+            if t % 100000 == 0:
+                print('Episode ', t)
+
+            # get probabilities of all actions from current state
+            action_probabilities = policy(state)
+
+            # choose action according to
+            # the probability distribution
+            action = np.random.choice(np.arange(
+                len(action_probabilities)),
+                p=action_probabilities)
+
+            # take action and get reward, transit to next state
+            next_state, reward, done, _ = env.step(
+                env.actions.actions_extended[action])
+
+            # Update statistics
+            stats.episode_rewards[ith_episode] += reward
+            stats.episode_lengths[ith_episode] = t
+
+            # TD Update
+            best_next_action = np.argmax(Q[next_state])
+            td_target = reward + discount_factor * \
+                Q[next_state][best_next_action]
+            td_delta = td_target - \
+                Q[state][action]
+            td_deltas.append(td_delta)
+            rewards.append(reward)
+            env.rewards.add_continous_step(reward)
+            Q[state][action] += alpha * td_delta
+            q_values_count.append(len(Q.items()))
+
+            # done is True if episode terminated
+            if done:
+                break
+
+            state = next_state
+
+        if ith_episode % 1000 == 0:
+            print('Episode ', ith_episode, ' reward is:',
+                  env.rewards.get_total_episode_reward())
+
+    plt.plot(td_deltas)
+    plt.plot(q_values_count)
+    plt.show()
+    plt.plot(smoothList(rewards))
+    plt.plot(env.rewards.get_smothed_continous_steps())
+    plt.show()
+    return env.rewards
+
+
+def smoothList(list, x=100):
+    if(len(list) > x):
+        ratio = int(len(list)/x)
+        smoothed = [0]*(x)
+        for i in range(len(smoothed)):
+            pos = i*ratio
+            smoothed[i] = sum(list[pos:pos+ratio])/float(ratio)
+        return smoothed
+    return list

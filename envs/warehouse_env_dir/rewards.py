@@ -13,6 +13,8 @@ class Rewards():
         self.steps = steps
         self.all_episode_rewards = []
         self.all_episode_rewards_per_step = []
+        # TODO delete this
+        self.continuous_step_rewards = []
         self.all_rewards_loop_storage = []
         self.all_rewards_loop_request_updates = []
         self.all_rewards_loop_arrival = []
@@ -20,6 +22,7 @@ class Rewards():
         self.all_rewards_action_store = []
         self.all_rewards_action_order = []
         self.step = 0
+        self.episode = 0
         self.step_reward = 0
         self.total_episode_reward = 0
         self.rewards_loop_storage = []
@@ -32,6 +35,7 @@ class Rewards():
 
     def reset_episode(self):
         if self.step > 0:
+            self.episode += 1
             self.all_episode_rewards.append(self.total_episode_reward)
             self.all_episode_rewards_per_step.append(
                 self.total_episode_reward/self.steps)
@@ -96,8 +100,15 @@ class Rewards():
             self.rewards_action_order)
         # self.episode_rewards.append(self.step_reward)
         self.total_episode_reward += self.step_reward
+
         self.step += 1
         return self.step_reward
+
+    def add_continous_step(self, step):
+        self.continuous_step_rewards.append(step)
+
+    def get_smothed_continous_steps(self):
+        return self.smoothList(self.continuous_step_rewards)
 
     def get_total_episode_reward(self):
         return self.total_episode_reward
