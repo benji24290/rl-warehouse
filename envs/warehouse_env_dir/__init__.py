@@ -86,7 +86,7 @@ if __name__ == '__main__':
         if(True):
             config = EnvConfig(seed=1234,  turns=100,
                                steps_to_request=4)
-            config_cont = EnvConfig(seed=1234,  turns=20000000,
+            config_cont = EnvConfig(seed=1234,  turns=200000,
                                     steps_to_request=4)
             rew_q_e = q_learning_agent(
                 config, alpha=0.1, count=1000, linear_eps=True)

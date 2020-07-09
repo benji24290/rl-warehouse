@@ -426,6 +426,83 @@ def qLearning(config, num_episodes, discount_factor=1.0,
     return env.rewards
 
 
+def sarsa(config, num_episodes, discount_factor=1.0,
+          alpha=0.6, epsilon=0.5):
+    """
+    Q-Learning algorithm: Off-policy TD control.
+    Finds the optimal greedy policy while improving
+    following an epsilon-greedy policy"""
+    env = WarehouseEnv(config)
+    num_actions = len(env.actions.actions_extended)
+    # Action value function
+    # A nested dictionary that maps
+    # state -> (action -> action-value).
+    Q = defaultdict(lambda: np.zeros(num_actions))
+
+    # Keeps track of useful statistics
+    stats = plotting.EpisodeStats(
+        episode_lengths=np.zeros(num_episodes),
+        episode_rewards=np.zeros(num_episodes))
+
+    # Create an epsilon greedy policy function
+    # appropriately for environment action space
+    policy = createEpsilonGreedyPolicy(Q, epsilon, num_actions)
+    td_deltas = []
+    q_values_count = []
+
+    # For every episode
+    for ith_episode in range(num_episodes):
+
+        # Reset the environment and pick the first action
+        state = env.reset()
+
+        for t in itertools.count():
+
+            # get probabilities of all actions from current state
+            action_probabilities = policy(state)
+
+            # choose action according to
+            # the probability distribution
+            action = np.random.choice(np.arange(
+                len(action_probabilities)),
+                p=action_probabilities)
+
+            # take action and get reward, transit to next state
+            next_state, reward, done, _ = env.step(
+                env.actions.actions_extended[action])
+
+            # Update statistics
+            stats.episode_rewards[ith_episode] += reward
+            stats.episode_lengths[ith_episode] = t
+
+            # TD Update
+            best_next_action = np.argmax(Q[next_state])
+            td_target = reward + discount_factor * \
+                Q[next_state][best_next_action]
+            td_delta = td_target - \
+                Q[state][action]
+            td_deltas.append(td_delta)
+            Q[state][action] += alpha * td_delta
+            q_values_count.append(len(Q.items()))
+
+            # done is True if episode terminated
+            if done:
+                break
+
+            state = next_state
+
+        if ith_episode % 1000 == 0:
+            print('Episode ', ith_episode, ' reward is:',
+                  env.rewards.get_total_episode_reward())
+
+    plt.plot(td_deltas)
+    plt.plot(q_values_count)
+    plt.show()
+
+    plotting.plot_episode_stats(stats)
+    return env.rewards
+
+
 def qLearning_continuous(config, num_episodes, discount_factor=1.0,
                          alpha=0.1, epsilon=0.1):
     """
