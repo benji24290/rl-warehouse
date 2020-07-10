@@ -21,10 +21,10 @@ sarsa_episode_scores = []
 expected_sarsa_episode_scores = []
 
 # Epsilon greedy action selection
-eps_decay_factor = 0.99999  # After every episode, eps is 0.9 times the previous one
+eps_decay_factor = 0.9999  # After every episode, eps is 0.9 times the previous one
 eps_min = 0.05  # 10% exploration is compulsory till the end
 
-num_episodes = 200000
+num_episodes = 50000
 alpha = 0.6
 gamma = 0.999
 
@@ -153,7 +153,7 @@ plt.ylabel('∅-Reward pro Step')
 plt.title('Bestellung alle 4 Steps')
 plt.plot(results_q_learning.get_smooth_all_episode_rewards_per_step(),
          label='q-learn')
-plt.plot(results_sarsa.get_smothed_continous_steps(),
+plt.plot(results_sarsa.get_smooth_all_episode_rewards_per_step(),
          label='sarsa')
 plt.plot(
     rew_h_v4.get_smooth_all_episode_rewards_per_step(), label='heur-v4')
