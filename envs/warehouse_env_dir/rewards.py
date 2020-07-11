@@ -6,6 +6,7 @@ except ModuleNotFoundError:
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import pandas as pd
 
 
 class Rewards():
@@ -13,6 +14,9 @@ class Rewards():
         self.steps = steps
         self.all_episode_rewards = []
         self.all_episode_rewards_per_step = []
+        self.squared_td_errors = []
+        self.visited_states = []
+        self.epsilons = []
         # TODO delete this
         self.continuous_step_rewards = []
         self.all_rewards_loop_storage = []
@@ -140,7 +144,55 @@ class Rewards():
         plt.plot(self.all_episode_rewards)
         plt.show()
 
-    def plot_episode_rewards(self, episode, name='Episode rewards'):
+    def plot_episode_rewards(self, label, window=20, std=True):
+        self._plot_smoothed_array(
+            array=self.all_episode_rewards_per_step, label=label, window=window, std=std)
+
+    def plot_visited_s_a(self, label, window=20, std=True):
+        self._plot_smoothed_array(
+            array=self.visited_states, label=label, window=window, std=std)
+
+    def plot_epsilons(self, label, window=20, std=True):
+        self._plot_smoothed_array(
+            array=self.epsilons, label=label, window=window, std=std)
+
+    def plot_squared_td_errors(self, label, window=20, std=True):
+        self._plot_smoothed_array(
+            array=self.squared_td_errors, label=label, window=window, std=std)
+
+    def _plot_smoothed_array(self, array, label, window, std):
+        time_series_df = pd.DataFrame(
+            array)
+        smooth_path = time_series_df.rolling(window).mean()
+        plt.plot(smooth_path, label=label, linewidth=2)
+        if(std):
+            path_deviation = time_series_df.rolling(window).std()
+            plt.fill_between(path_deviation.index, (smooth_path-path_deviation)
+                             [0], (smooth_path+path_deviation)[0], alpha=.1)
+
+    def plot_exploration(self, window=20):
+        time_series_df_eps = pd.DataFrame(
+            self.epsilons)
+        smooth_eps = time_series_df_eps.rolling(window).mean()
+        time_series_df_visited = pd.DataFrame(
+            self.visited_states)
+        smooth_visited = time_series_df_visited.rolling(window).mean()
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        ax1.set_xlabel('Anzahl Steps')
+        ax1.set_ylabel('Epsilon')
+        ax2.set_ylabel('Besuchte S,A Paare')
+        ax1.plot(smooth_eps, label="Epsilon", linewidth=2, color="blue")
+        ax2.plot(smooth_visited, label="Visited", linewidth=2, color="orange")
+        lines_1, labels_1 = ax1.get_legend_handles_labels()
+        lines_2, labels_2 = ax2.get_legend_handles_labels()
+        lines = lines_1 + lines_2
+        labels = labels_1 + labels_2
+        ax2.legend(lines, labels, loc=0)
+        ax1.set_title('Exploration')
+        plt.show()
+
+    def plot_episode_step(self, episode, name='Episode rewards'):
         '''Plots the all rewards for a given episode'''
         self.reset_episode()
         plt.xlabel('Steps')
