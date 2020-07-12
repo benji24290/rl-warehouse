@@ -25,7 +25,7 @@ import numpy as np
 eps_decay_factor = 0.9999  # After every episode, eps is 0.9 times the previous one
 eps_min = 0.05  # 10% exploration is compulsory till the end
 
-num_episodes = 50000
+num_episodes = 500
 alpha = 0.6
 gamma = 0.999
 
@@ -36,6 +36,6 @@ config = EnvConfig(seed=1234,  turns=100,
 
 if __name__ == '__main__':
     compare_parameters_q_learning(num_episodes=num_episodes, random_seed=random_seed,
-                                  config=config, eps_decay_factor=eps_decay_factor, eps_min=eps_min)
+                                  config=config, eps_decay_factor=eps_decay_factor)
     compare_parameters_sarsa(num_episodes=num_episodes, random_seed=random_seed,
-                             config=config, eps_decay_factor=eps_decay_factor, eps_min=eps_min)
+                             config=config, eps_decay_factor=eps_decay_factor)

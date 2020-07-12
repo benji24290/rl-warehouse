@@ -88,6 +88,9 @@ class Rewards():
                 neg -= 1
         return [pos, neg]
 
+    def get_mean_step_reward_last_n_episodes(self, episodes=50):
+        return sum(self.all_episode_rewards_per_step[-(episodes):])/episodes
+
     def calculate_step_reward(self):
         self.step_reward = 0
         self.step_reward += self.get_step_reward_of_array(
@@ -145,30 +148,32 @@ class Rewards():
         plt.show()
 
     def plot_episode_rewards(self, label, window=20, std=True):
-        self._plot_smoothed_array(
+        return self._plot_smoothed_array(
             array=self.all_episode_rewards_per_step, label=label, window=window, std=std)
 
     def plot_visited_s_a(self, label, window=20, std=True):
-        self._plot_smoothed_array(
+        return self._plot_smoothed_array(
             array=self.visited_states, label=label, window=window, std=std)
 
     def plot_epsilons(self, label, window=20, std=True):
-        self._plot_smoothed_array(
+        return self._plot_smoothed_array(
             array=self.epsilons, label=label, window=window, std=std)
 
     def plot_squared_td_errors(self, label, window=20, std=True):
-        self._plot_smoothed_array(
+        return self._plot_smoothed_array(
             array=self.squared_td_errors, label=label, window=window, std=std)
 
     def _plot_smoothed_array(self, array, label, window, std):
         time_series_df = pd.DataFrame(
             array)
-        smooth_path = time_series_df.rolling(window).mean()
+        window_size = int(len(array)/20)
+        smooth_path = time_series_df.rolling(window_size).mean()
         plt.plot(smooth_path, label=label, linewidth=2)
         if(std):
-            path_deviation = time_series_df.rolling(window).std()
+            path_deviation = time_series_df.rolling(window_size).std()
             plt.fill_between(path_deviation.index, (smooth_path-path_deviation)
                              [0], (smooth_path+path_deviation)[0], alpha=.1)
+        return window_size
 
     def plot_exploration(self, window=20):
         time_series_df_eps = pd.DataFrame(

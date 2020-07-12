@@ -126,10 +126,10 @@ def run_sarsa_agent(env, num_episodes, alpha,
             best_score_episodes_taken = i_episode
 
         print(
-            f'\rEpisode: {i_episode}/{num_episodes}, score: {episode_score}, Average(last 20): {sum(episode_scores[:-20])/len(episode_scores)}, epsilon: {epsilon}', end='')
+            f'\rEpisode: {i_episode}/{num_episodes}, score: {episode_score}, Average score/step(last 50E): {sum(episode_scores[-50:])/50/100}, epsilon: {epsilon}', end='')
 
     print(
-        f'\nAfter {num_episodes}, average score: {sum(episode_scores)/len(episode_scores)}, Average(last 20): {sum(episode_scores[:-20])/len(episode_scores)}')
+        f'\nAfter {num_episodes}, average score: {sum(episode_scores)/len(episode_scores)}, Average score/step(last 50E): {sum(episode_scores[-50:])/50/100}')
     print(
         f'Best score: {best_score}, Sequence of actions: {[action for action in best_path_actions]}, Reached in {best_score_episodes_taken} episodes')
     print('===================================================================================================================')

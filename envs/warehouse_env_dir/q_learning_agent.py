@@ -105,7 +105,6 @@ def run_q_learning_agent(env, num_episodes, alpha,
         while True:
             action = agent.act(state, epsilon=epsilon)
             new_state, reward, done, debug = env.step(action)
-
             episode_score += reward
 
             td_error, visited = agent.learn(state, action, reward, new_state)
@@ -118,7 +117,6 @@ def run_q_learning_agent(env, num_episodes, alpha,
             episode_actions.append(action)
             if done:
                 break
-
         episode_scores.append(episode_score)
         # Decay epsilon
         epsilon = max(epsilon * eps_decay_factor, eps_min)
@@ -130,10 +128,10 @@ def run_q_learning_agent(env, num_episodes, alpha,
             best_score_episodes_taken = i_episode
 
         print(
-            f'\rEpisode: {i_episode}/{num_episodes}, score: {episode_score}, Average(last 20): {sum(episode_scores[:-20])/len(episode_scores)}, epsilon: {epsilon}', end='')
+            f'\rEpisode: {i_episode}/{num_episodes}, score: {episode_score}, Average score/step(last 50E):  {sum(episode_scores[-50:])/50/100}, epsilon: {epsilon}', end='')
 
     print(
-        f'\nAfter {num_episodes}, average score: {sum(episode_scores)/len(episode_scores)}, Average(last 20): {sum(episode_scores[:-20])/len(episode_scores)}')
+        f'\nAfter {num_episodes}, average score: {sum(episode_scores)/len(episode_scores)}, Average score/step(last 50E): {sum(episode_scores[-50:])/50/100}')
     print(
         f'Best score: {best_score}, Sequence of actions: {[action for action in best_path_actions]}, Reached in {best_score_episodes_taken} episodes')
     print('===================================================================================================================')
