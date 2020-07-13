@@ -1,5 +1,5 @@
 class EnvConfig():
-    def __init__(self, seed=None, max_requests=2, max_arrivals=2, storage_spaces=3, turns=100, steps_to_request=3, simple_state=False):
+    def __init__(self, seed=None, max_requests=2, max_arrivals=2, storage_spaces=3, turns=100, steps_to_request=4, simple_state=False):
         self.seed = seed
         self.max_requests = max_requests
         self.max_arrivals = max_arrivals

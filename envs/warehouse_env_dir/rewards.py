@@ -147,23 +147,44 @@ class Rewards():
         plt.plot(self.all_episode_rewards)
         plt.show()
 
-    def plot_episode_rewards(self, label, window=20, std=True):
-        return self._plot_smoothed_array(
-            array=self.all_episode_rewards_per_step, label=label, window=window, std=std)
+    def plot_step_rewards_of_episode(self, episode):
+        '''Plots the all rewards for a given episode'''
+        self.reset_episode()
+        try:
+            plt.xlabel('Steps')
+            plt.ylabel('Reward')
+            plt.plot(
+                self.all_rewards_loop_storage[episode], label='Lagerkosten')
+            plt.plot(
+                self.all_rewards_loop_request_updates[episode], label='Storniert')
+            plt.plot(
+                self.all_rewards_loop_arrival[episode], label='Ankunft voll')
+            plt.plot(
+                self.all_rewards_action_deliver[episode], label='Ausgelifert')
+            # plt.plot(self.all_rewards_action_store[episode], label='a_store')
+            # plt.plot(self.all_rewards_action_order[episode], label='a_order')
+        except:
+            log.error('plot_episode_rewards:', 'no valid episode', episode)
+        plt.legend()
+        plt.show()
 
-    def plot_visited_s_a(self, label, window=20, std=True):
+    def plot_episode_rewards(self, label,  std=True):
         return self._plot_smoothed_array(
-            array=self.visited_states, label=label, window=window, std=std)
+            array=self.all_episode_rewards_per_step, label=label,  std=std)
 
-    def plot_epsilons(self, label, window=20, std=True):
+    def plot_visited_s_a(self, label, std=True):
         return self._plot_smoothed_array(
-            array=self.epsilons, label=label, window=window, std=std)
+            array=self.visited_states, label=label, std=std)
 
-    def plot_squared_td_errors(self, label, window=20, std=True):
+    def plot_epsilons(self, label, std=True):
         return self._plot_smoothed_array(
-            array=self.squared_td_errors, label=label, window=window, std=std)
+            array=self.epsilons, label=label, std=std)
 
-    def _plot_smoothed_array(self, array, label, window, std):
+    def plot_squared_td_errors(self, label, std=True):
+        return self._plot_smoothed_array(
+            array=self.squared_td_errors, label=label,  std=std)
+
+    def _plot_smoothed_array(self, array, label, std):
         time_series_df = pd.DataFrame(
             array)
         window_size = int(len(array)/20)
@@ -334,32 +355,44 @@ class Rewards():
 
     def plot_pos_neg_rewards(self, name='Pos-Neg Rewards'):
         plt.title = name
-        plt.ylabel('Rewards')
+        plt.ylabel('Anzahl erhalten pro Episode')
         plt.xlabel('Episodes')
+        '''
+        # plt.plot(
+        #    self.smoothList(self.get_loop_storage_pnr()[0]), label='l_storage_p', color='blue')
         plt.plot(
-            self.smoothList(self.get_loop_storage_pnr()[0]), label='l_storage_p', color='blue')
+            self.smoothList(self.get_loop_storage_pnr()[1]), label='Lagerkosten', color='blue', linestyle='dashed')
+        # plt.plot(
+        #   self.smoothList(self.get_loot_request_updates_pnr()[0]), label='l_request_p', color='orange')
         plt.plot(
-            self.smoothList(self.get_loop_storage_pnr()[1]), label='l_storage_n', color='blue', linestyle='dashed')
+            self.smoothList(self.get_loot_request_updates_pnr()[1]), label='Storniert', color='orange', linestyle='dashed')
+        # plt.plot(
+        #   self.smoothList(self.get_loop_arrival_pnr()[0]), label='l_arrival_p', color='red')
         plt.plot(
-            self.smoothList(self.get_loot_request_updates_pnr()[0]), label='l_request_p', color='orange')
+            self.smoothList(self.get_loop_arrival_pnr()[1]), label='Ankunft voll', color='red', linestyle='dashed')
         plt.plot(
-            self.smoothList(self.get_loot_request_updates_pnr()[1]), label='l_request_n', color='orange', linestyle='dashed')
+            self.smoothList(self.get_action_deliver_pnr()[0]), label='Ausgelifert', color='green')
         plt.plot(
-            self.smoothList(self.get_loop_arrival_pnr()[0]), label='l_arrival_p', color='red')
-        plt.plot(
-            self.smoothList(self.get_loop_arrival_pnr()[1]), label='l_arrival_n', color='red', linestyle='dashed')
-        plt.plot(
-            self.smoothList(self.get_action_deliver_pnr()[0]), label='a_deliver_p', color='green')
-        plt.plot(
-            self.smoothList(self.get_action_deliver_pnr()[1]), label='a_deliver_n', color='green', linestyle='dashed')
-        plt.plot(
-            self.smoothList(self.get_action_store_pnr()[0]), label='a_store_p', color='purple')
-        plt.plot(
-            self.smoothList(self.get_action_store_pnr()[1]), label='a_store_n', color='purple', linestyle='dashed')
-        plt.plot(
-            self.smoothList(self.get_action_order_pnr()[0]), label='a_order_p', color='pink')
-        plt.plot(
-            self.smoothList(self.get_action_order_pnr()[1]), label='a_order_n', color='pink', linestyle='dashed')
+            self.smoothList(self.get_action_deliver_pnr()[1]), label='Falsch ausgeliefert', color='green', linestyle='dashed')
+        # plt.plot(
+        #   self.smoothList(self.get_action_store_pnr()[0]), label='a_store_p', color='purple')
+        # plt.plot(
+        #    self.smoothList(self.get_action_store_pnr()[1]), label='a_store_n', color='purple', linestyle='dashed')
+        # plt.plot(
+        #   self.smoothList(self.get_action_order_pnr()[0]), label='a_order_p', color='pink')
+        # plt.plot(
+        #   self.smoothList(self.get_action_order_pnr()[1]), label='a_order_n', color='pink', linestyle='dashed')
+        '''
+        self._plot_smoothed_array(self.get_loop_storage_pnr()[
+                                  1], label='Lagerkosten', std=False)
+        self._plot_smoothed_array(self.get_loot_request_updates_pnr()[
+                                  1], label='Storniert', std=False)
+        self._plot_smoothed_array(self.get_loop_arrival_pnr()[
+                                  1], label='Ankunft voll', std=False)
+        self._plot_smoothed_array(self.get_action_deliver_pnr()[
+                                  0], label='Ausgelifert', std=False)
+        self._plot_smoothed_array(self.get_action_deliver_pnr()[
+                                  1], label='Falsch ausgeliefert', std=False)
         plt.legend()
         plt.show()
 

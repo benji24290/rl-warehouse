@@ -5,28 +5,14 @@ import math
 class QAgent:
 
     def __init__(self, actions, alpha=0.4, gamma=0.9, random_seed=0):
-        """
-        The Q-values will be stored in a dictionary. Each key will be of the format: ((x, y), a). 
-        params:
-            actions (list): A list of all the possible action values.
-            alpha (float): step size
-            gamma (float): discount factor
-        """
         self.Q = {}
-
         self.actions = actions
         self.alpha = alpha
         self.gamma = gamma
         random.seed(random_seed)
 
     def get_Q_value(self, state, action):
-        """
-        Get q value for a state action pair.
-        params:
-            state (tuple): (x, y) coords in the grid
-            action (int): an integer for the action
-        """
-        return self.Q.get((state, action), 0.0)  # Return 0.0 if state-action pair does not exist
+        return self.Q.get((state, action), 0.0)
 
     def act(self, state, epsilon=0.1):
         # Choose a random action
@@ -39,9 +25,7 @@ class QAgent:
         return action
 
     def learn(self, state, action, reward, next_state):
-        """
-        Q-Learning update
-        """
+        # Update Q-Values
         q_next = self.get_Q_value(
             state=next_state,
             action=self.greedy_action_selection(next_state)
@@ -49,7 +33,7 @@ class QAgent:
         td_error = 0
         visited = len(self.Q)
 
-        # If this is the first time the state action pair is encountered
+        # First visit add Reward as Q-Value
         q_current = self.Q.get((state, action), None)
         if q_current is None:
             self.Q[(state, action)] = reward
@@ -61,16 +45,11 @@ class QAgent:
         return td_error, visited
 
     def greedy_action_selection(self, state):
-        """
-        Selects action with the highest Q-value for the given state.
-        """
-        # Get all the Q-values for all possible actions for the state
+        # Get action with the highest Q-value
         q_values = [self.get_Q_value(state, action) for action in self.actions]
         maxQ = max(q_values)
-        # There might be cases where there are multiple actions with the same high q_value. Choose randomly then
         count_maxQ = q_values.count(maxQ)
         if count_maxQ > 1:
-            # Get all the actions with the maxQ
             best_action_indexes = [i for i in range(
                 len(self.actions)) if q_values[i] == maxQ]
             action_index = random.choice(best_action_indexes)
@@ -82,9 +61,8 @@ class QAgent:
 
 def run_q_learning_agent(env, num_episodes, alpha,
                          gamma, eps_decay_factor, random_seed):
-    # <------------Q-Learning ---------------------->
-    print('Stats for Q Learning')
-    print('===================================================================================================================')
+    print('Q Learning')
+    print('____________________________________________________________________________')
     episode_scores = []
     epsilon = 1
     eps_min = 0.05
@@ -93,7 +71,6 @@ def run_q_learning_agent(env, num_episodes, alpha,
     agent = QAgent(actions=actions, alpha=alpha,
                    gamma=alpha, random_seed=random_seed)
 
-    # Storing the path taken and score for the best episode
     best_score = -math.inf
     best_path_actions = list()
     best_score_episodes_taken = 0
@@ -118,10 +95,10 @@ def run_q_learning_agent(env, num_episodes, alpha,
             if done:
                 break
         episode_scores.append(episode_score)
-        # Decay epsilon
+
         epsilon = max(epsilon * eps_decay_factor, eps_min)
 
-        # For best episode data
+        # best?
         if episode_score > best_score:
             best_score = episode_score
             best_path_actions = episode_actions
@@ -134,6 +111,6 @@ def run_q_learning_agent(env, num_episodes, alpha,
         f'\nAfter {num_episodes}, average score: {sum(episode_scores)/len(episode_scores)}, Average score/step(last 50E): {sum(episode_scores[-50:])/50/100}')
     print(
         f'Best score: {best_score}, Sequence of actions: {[action for action in best_path_actions]}, Reached in {best_score_episodes_taken} episodes')
-    print('===================================================================================================================')
+    print('________________________________________________________________________________')
     env.rewards.q = agent.Q
     return env.rewards

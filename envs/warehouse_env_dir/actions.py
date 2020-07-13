@@ -20,18 +20,18 @@ class Actions():
     def store(self, article_id, storage_pos=None):
         if storage_pos is None:
             storage_pos = self.store_oracle()
-        if(storage_pos is not None and self.env.storage.storage_spaces[storage_pos].distance is not None):
+        if(storage_pos is not None and self.env.storage.storage_spaces[storage_pos] is not None):
             article = self.env.arrivals.remove_article_from_arrival(
                 self.env.possible_articles.get_article_by_id(article_id))
             if article is not None:
                 if(self.env.storage.store(article, storage_pos)):
                     log.info('store: ' + article.get_name() +
                              'in storage pos: ', storage_pos)
-                    return 10 * self.env.storage.storage_spaces[storage_pos].distance
+                    return 0
                 log.info('store: space is already used...')
-                return -10 * self.env.storage.storage_spaces[storage_pos].distance
+                return -10
             log.info('store: article not found')
-            return -10 * self.env.storage.storage_spaces[storage_pos].distance
+            return -10
         log.info('store: storage space not found')
         return 0  # storage space
 
@@ -67,7 +67,7 @@ class Actions():
             self.env.rewards.add_reward_action_store(self.store(article_id))
         elif action == 'DELIVER':
             self.env.rewards.add_reward_action_deliver(
-                self.deliver(article_id))
+                self.deliver(self.deliver_oracle()))
         elif action == 'ORDER':
             self.env.rewards.add_reward_action_order(self.order(article_id))
             # TODO Remove and make dynamic
@@ -94,11 +94,22 @@ class Actions():
         return random.choice(self.actions_with_idle)
 
     def store_oracle(self):
-        # TODO make store oracle inteligent
         possible = self.env.storage.get_possible_spaces()
         if(len(possible) > 0):
             return random.choice(possible)
         return None
+
+    def deliver_oracle(self):
+        a_id = None
+        for req in self.env.requests.requests:
+            if(a_id != None):
+                break
+            for space in self.env.storage.storage_spaces:
+                if(a_id != None):
+                    break
+                if req.article == space.article:
+                    a_id = req.article.id
+        return a_id
 
 #    def arrival_oracle(self):
 #        # random choice of possible?
