@@ -25,7 +25,7 @@ eps_decay_factor = 0.999
 eps_min = 0.05
 
 num_episodes = 50000
-train_episodes = 1000
+train_episodes = 800000
 alpha = 0.5
 gamma = 0.9
 
@@ -36,27 +36,36 @@ config = EnvConfig(seed=1234,  turns=100)
 alphas = [0.5, 0.6, 0.7, 0.8, 0.9]
 gammas = [0.9, 0.8, 0.7, 0.6, 0.5]
 eps_decay_factors = [0.9985, 0.999, 0.9995, 0.9999, 1]
-#eps_decay_factors = [1]
+# eps_decay_factors = [1]
+best_epsilon_dec_q = 0.99999374970701
+best_alpha_q = 0.9
+best_gamma_q = 0.8
 
+best_epsilon_dec_sarsa = 0.99999374970701
+best_alpha_sarsa = 0.6
+best_gamma_sarsa = 0.6
 
 # To deisable sections of this experiment
-evaluate_params = False
-train = True
-compare_policies = True  # train also needs to be true
+evaluate_params = True
+train = False
+compare_policies = False  # train also needs to be true
 
 
 if __name__ == '__main__':
 
     if(evaluate_params):
         # Q-Learning
+
         compare_epsilon_decay(num_episodes=num_episodes, random_seed=random_seed, gamma=gamma,
                               alpha=alpha, config=config, eps_decay_factors=eps_decay_factors, learner="Q-Learning")
         compare_alpha(num_episodes=num_episodes, random_seed=random_seed,
                       config=config, eps_decay_factor=eps_decay_factor, gamma=gamma, learner="Q-Learning", alphas=alphas)
+
         compare_gamma(num_episodes=num_episodes, random_seed=random_seed,
                       config=config, eps_decay_factor=eps_decay_factor, alpha=alpha, learner="Q-Learning", gammas=gammas)
 
         # Sarsa
+
         compare_epsilon_decay(num_episodes=num_episodes, random_seed=random_seed, gamma=gamma, alpha=alpha,
                               config=config, eps_decay_factors=eps_decay_factors, learner="Sarsa")
         compare_alpha(num_episodes=num_episodes, random_seed=random_seed,
@@ -67,10 +76,10 @@ if __name__ == '__main__':
     if(train):
         # train policy with best parameters
         results_sarsa = run_sarsa_agent(WarehouseEnv(
-            config), train_episodes, alpha, gamma, eps_decay_factor, random_seed)
+            config), num_episodes=train_episodes, alpha=best_alpha_sarsa, gamma=best_gamma_sarsa, eps_decay_factor=best_epsilon_dec_sarsa, random_seed=random_seed)
 
         results_q_learning = run_q_learning_agent(WarehouseEnv(
-            config), train_episodes, alpha, gamma, eps_decay_factor, random_seed)
+            config), num_episodes=train_episodes, alpha=best_alpha_q, gamma=best_gamma_q, eps_decay_factor=best_epsilon_dec_q, random_seed=random_seed)
         # Plot Rewards
         plt.xlabel('Episoden')
         plt.ylabel('∅-Reward pro Step')
@@ -108,6 +117,18 @@ if __name__ == '__main__':
         plt.legend()
         plt.show()
 
+        plt.xlabel('Steps')
+        plt.ylabel('Epsilon')
+        window_epsilon = results_q_learning.plot_epsilons(
+            label='Q-Learning',  std=False)
+        results_sarsa.plot_epsilons(
+            label='Sarsa',  std=False)
+
+        plt.title('Epsilon-Decay - Window=' +
+                  str(window_epsilon))
+        plt.legend()
+        plt.show()
+
         results_sarsa.plot_pos_neg_rewards(name='Sarsa')
         results_q_learning.plot_pos_neg_rewards(name='Q-Learning')
 
@@ -132,6 +153,6 @@ if __name__ == '__main__':
             plt.show()
 
             results_q_learning_policy.plot_step_rewards_of_episode(
-                98)
-            results_sarsa_policy.plot_step_rewards_of_episode(98)
-            rew_h_v4.plot_step_rewards_of_episode(98)
+                980)
+            results_sarsa_policy.plot_step_rewards_of_episode(980)
+            rew_h_v4.plot_step_rewards_of_episode(980)

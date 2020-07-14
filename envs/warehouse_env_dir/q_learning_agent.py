@@ -69,7 +69,7 @@ def run_q_learning_agent(env, num_episodes, alpha,
     actions = env.actions.actions_extended
 
     agent = QAgent(actions=actions, alpha=alpha,
-                   gamma=alpha, random_seed=random_seed)
+                   gamma=gamma, random_seed=random_seed)
 
     best_score = -math.inf
     best_path_actions = list()

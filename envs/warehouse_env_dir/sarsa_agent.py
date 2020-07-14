@@ -43,7 +43,6 @@ class SarsaAgent:
         td_error = 0
         visited = len(self.Q)
         q_next = self.get_Q_value(next_state, next_state_action)
-
         # First visit add Reward as Q-Value
         q_current = self.Q.get((state, action), None)
         if q_current is None:
@@ -67,7 +66,7 @@ def run_sarsa_agent(env, num_episodes, alpha,
     actions = env.actions.actions_extended
 
     agent = SarsaAgent(actions=actions, alpha=alpha,
-                       gamma=alpha, random_seed=random_seed)
+                       gamma=gamma, random_seed=random_seed)
 
     # Storing the path taken and score for the best episode
     best_score = -math.inf
