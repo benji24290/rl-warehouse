@@ -25,7 +25,7 @@ eps_decay_factor = 0.999
 eps_min = 0.05
 
 num_episodes = 50000
-train_episodes = 800000
+train_episodes = 500
 alpha = 0.5
 gamma = 0.9
 
@@ -46,9 +46,9 @@ best_alpha_sarsa = 0.6
 best_gamma_sarsa = 0.6
 
 # To deisable sections of this experiment
-evaluate_params = True
-train = False
-compare_policies = False  # train also needs to be true
+evaluate_params = False
+train = True
+compare_policies = True  # train also needs to be true
 
 
 if __name__ == '__main__':
@@ -132,12 +132,18 @@ if __name__ == '__main__':
         results_sarsa.plot_pos_neg_rewards(name='Sarsa')
         results_q_learning.plot_pos_neg_rewards(name='Q-Learning')
 
+        results_sarsa.export_q("sarsa.csv")
+
+        results_q_learning.export_q("q-learning.csv")
+
         if(compare_policies):
             # Test learned Policies
-            results_q_learning_policy = run_policy_test_agent(env=WarehouseEnv(
-                config), num_episodes=1000, Q=results_q_learning.q, random_seed=random_seed)
-            results_sarsa_policy = run_policy_test_agent(env=WarehouseEnv(
-                config), num_episodes=1000, Q=results_sarsa.q, random_seed=random_seed)
+            q_env = WarehouseEnv(config)
+            results_q_learning_policy = run_policy_test_agent(
+                env=q_env, num_episodes=1000, Q=q_env.rewards.import_q("q-learning.csv"), random_seed=random_seed)
+            sarsa_env = WarehouseEnv(config)
+            results_sarsa_policy = run_policy_test_agent(
+                env=sarsa_env, num_episodes=1000, Q=sarsa_env.rewards.import_q("sarsa.csv"), random_seed=random_seed)
 
             rew_h_v4 = heuristic(config, count=1000, version='v4')
 
