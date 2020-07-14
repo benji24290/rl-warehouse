@@ -25,7 +25,7 @@ eps_decay_factor = 0.999
 eps_min = 0.05
 
 num_episodes = 50000
-train_episodes = 500
+train_episodes = 800000
 alpha = 0.5
 gamma = 0.9
 
