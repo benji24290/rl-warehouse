@@ -136,29 +136,29 @@ if __name__ == '__main__':
 
         results_q_learning.export_q("q-learning.csv")
 
-        if(compare_policies):
-            # Test learned Policies
-            q_env = WarehouseEnv(config)
-            results_q_learning_policy = run_policy_test_agent(
-                env=q_env, num_episodes=1000, Q=q_env.rewards.import_q("q-learning.csv"), random_seed=random_seed)
-            sarsa_env = WarehouseEnv(config)
-            results_sarsa_policy = run_policy_test_agent(
-                env=sarsa_env, num_episodes=1000, Q=sarsa_env.rewards.import_q("sarsa.csv"), random_seed=random_seed)
+    if(compare_policies):
+        # Test learned Policies
+        q_env = WarehouseEnv(config)
+        results_q_learning_policy = run_policy_test_agent(
+            env=q_env, num_episodes=1000, Q=q_env.rewards.import_q("q-learning.csv"), random_seed=random_seed)
+        sarsa_env = WarehouseEnv(config)
+        results_sarsa_policy = run_policy_test_agent(
+            env=sarsa_env, num_episodes=1000, Q=sarsa_env.rewards.import_q("sarsa.csv"), random_seed=random_seed)
 
-            rew_h_v4 = heuristic(config, count=1000, version='v4')
+        rew_h_v4 = heuristic(config, count=1000, version='v4')
 
-            plt.xlabel('Episoden')
-            plt.ylabel('∅-Reward pro Step')
-            results_q_learning_policy.plot_episode_rewards(
-                label='Q-Learning',  std=False)
-            results_sarsa_policy.plot_episode_rewards(
-                label='Sarsa',  std=False)
-            rew_h_v4.plot_episode_rewards(
-                label='Heuristik',  std=False)
-            plt.legend()
-            plt.show()
+        plt.xlabel('Episoden')
+        plt.ylabel('∅-Reward pro Step')
+        results_q_learning_policy.plot_episode_rewards(
+            label='Q-Learning',  std=False)
+        results_sarsa_policy.plot_episode_rewards(
+            label='Sarsa',  std=False)
+        rew_h_v4.plot_episode_rewards(
+            label='Heuristik',  std=False)
+        plt.legend()
+        plt.show()
 
-            results_q_learning_policy.plot_step_rewards_of_episode(
-                980)
-            results_sarsa_policy.plot_step_rewards_of_episode(980)
-            rew_h_v4.plot_step_rewards_of_episode(980)
+        results_q_learning_policy.plot_step_rewards_of_episode(
+            980)
+        results_sarsa_policy.plot_step_rewards_of_episode(980)
+        rew_h_v4.plot_step_rewards_of_episode(980)
