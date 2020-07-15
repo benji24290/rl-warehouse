@@ -113,3 +113,50 @@ def heuristic(config, count=1000, version='v1'):
     # env.rewards.plot_episode_rewards(1)
     # env.rewards.plot_episode_rewards(num_ep-1)
     return env.rewards
+
+
+def create_heuristic_policy(config):
+    env = WarehouseEnv(config)
+
+    Q = {}
+
+    i = 0
+    for state in env.get_possible_states():
+        if i % 10000 == 0:
+            print('starting episode', i)
+        # TODO add actions with articles
+        best_action = evaluate_state(state, env)
+        for action in env.actions.actions_extended:
+            if(action == best_action):
+                Q[(state, action)] = 100
+            else:
+                print(action, "not", best_action)
+                Q[(state, action)] = 0
+        i += 1
+    env.rewards.q = Q
+    env.rewards.export_q("heuristic.csv")
+
+
+def evaluate_state(state, env):
+    storage = state[0:3]
+    requests = state[3:5]
+    arrivals = state[5:7]
+    orders = state[7:9]
+    possible_art = env.possible_articles.get_possible_articles()
+    # prio 1: fullfill requests if article is in store
+    for art in possible_art:
+        if(requests.count(art) > 0 and storage.count(art) > 0):
+            return 'DELIVER'
+    # prio 2: store articles from arrival
+    for arrival in arrivals:
+        if(arrival > 0 and storage.count(0) > 0):
+            return 'STORE'
+    # prio 3: order article if not in store or ordered
+    for art in possible_art:
+        if(storage.count(art) < 1 and (storage.count(0)+arrivals.count(0)-2+orders.count(0)) > 0):
+            if(arrivals.count(art) < 1 and orders.count(art) < 1):
+                return 'ORDER_'+str(art)
+    return 'IDLE'
+
+    # When 000,00,00,00
+    #print(storage, requests, arrivals, orders)

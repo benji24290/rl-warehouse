@@ -1,7 +1,7 @@
 try:
     from envs.warehouse_env_dir.warehouse_env import WarehouseEnv
     from envs.warehouse_env_dir.env_config import EnvConfig
-    from envs.warehouse_env_dir.heuristic_agent import heuristic
+    from envs.warehouse_env_dir.heuristic_agent import heuristic, create_heuristic_policy
     from envs.warehouse_env_dir.q_learning_agent import run_q_learning_agent
     from env.warehouse_env_dir.sarsa_agent import run_sarsa_agent
     from env.warehouse_env_dir.policy_test_agent import run_policy_test_agent
@@ -9,7 +9,7 @@ try:
 except ModuleNotFoundError:
     from warehouse_env import WarehouseEnv
     from env_config import EnvConfig
-    from heuristic_agent import heuristic
+    from heuristic_agent import heuristic, create_heuristic_policy
     from q_learning_agent import run_q_learning_agent
     from sarsa_agent import run_sarsa_agent
     from policy_test_agent import run_policy_test_agent
@@ -46,12 +46,17 @@ best_alpha_sarsa = 0.6
 best_gamma_sarsa = 0.6
 
 # To deisable sections of this experiment
+create_heu = False
 evaluate_params = False
-train = True
-compare_policies = True  # train also needs to be true
+train = False
+compare_policies = False  # train also needs to be true
+compare_heu = True
 
 
 if __name__ == '__main__':
+
+    if(create_heu):
+        heu = create_heuristic_policy(config)
 
     if(evaluate_params):
         # Q-Learning
@@ -161,4 +166,25 @@ if __name__ == '__main__':
         results_q_learning_policy.plot_step_rewards_of_episode(
             980)
         results_sarsa_policy.plot_step_rewards_of_episode(980)
+        rew_h_v4.plot_step_rewards_of_episode(980)
+
+    if(compare_heu):
+        # Test learned Policies
+        heu_env = WarehouseEnv(config)
+        heur_policy = run_policy_test_agent(
+            env=heu_env, num_episodes=1000, Q=heu_env.rewards.import_q("heuristic.csv"), random_seed=random_seed)
+
+        rew_h_v4 = heuristic(config, count=1000, version='v4')
+
+        plt.xlabel('Episoden')
+        plt.ylabel('∅-Reward pro Step')
+        heur_policy.plot_episode_rewards(
+            label='Heur-poli',  std=False)
+        rew_h_v4.plot_episode_rewards(
+            label='Heuristik',  std=False)
+        plt.legend()
+        plt.show()
+
+        heur_policy.plot_step_rewards_of_episode(
+            980)
         rew_h_v4.plot_step_rewards_of_episode(980)

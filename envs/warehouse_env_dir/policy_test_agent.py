@@ -23,7 +23,8 @@ class PolicyTestAgent:
             state (tuple): (x, y) coords in the grid
             action (int): an integer for the action
         """
-        return self.Q.get((state, action), 0.0)  # Return 0.0 if state-action pair does not exist
+        # Return 0.0 if state-action pair does not exist
+        return self.Q.get((state, action), 0.0)
 
     def act(self, state):
         # Choose the greedy action
@@ -42,7 +43,6 @@ class PolicyTestAgent:
             action_index = q_values.index(maxQ)
 
         action = self.actions[action_index]
-
         return action
 
 

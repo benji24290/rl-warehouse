@@ -42,6 +42,8 @@ class Actions():
             log.info('deliver:', article, 'was delivered')
             return 100
         log.warn('deliver:', article, 'could not be delivered')
+        print(self.env.requests.get_simple_requests_state(),
+              self.env.storage.get_simple_storage_state())
         return -100
 
     def order(self, article_id):
