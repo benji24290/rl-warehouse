@@ -36,6 +36,7 @@ class Rewards():
         self.rewards_action_deliver = []
         self.rewards_action_store = []
         self.rewards_action_order = []
+        self.all_actions = []
         self.q = None
 
     def reset_episode(self):
@@ -129,6 +130,11 @@ class Rewards():
               self.all_episode_rewards[0])
         print('Last episode rew:',
               self.all_episode_rewards[len(self.all_episode_rewards)-1])
+
+    def print_actions(self, actions, episodes=1):
+        print("______ACTIONS________")
+        for action in actions:
+            print(action, self.all_actions.count(action)/episodes)
 
     def get_step_reward_of_array(self, array):
         try:
