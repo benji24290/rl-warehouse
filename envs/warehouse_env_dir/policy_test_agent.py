@@ -41,8 +41,8 @@ class PolicyTestAgent:
             action_index = random.choice(best_action_indexes)
         else:
             action_index = q_values.index(maxQ)
-
         action = self.actions[action_index]
+        #print(state, action)
         return action
 
 

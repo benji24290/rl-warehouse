@@ -13,7 +13,7 @@ import math
 import numpy as np
 
 
-def compare_epsilon_decay(num_episodes, random_seed, config, eps_decay_factors, alpha, gamma, learner):
+def compare_epsilon_decay(num_episodes, random_seed, config, eps_decay_factors, alpha, gamma, learner, Q=None):
     run_agent = None
     if(learner == "Q-Learning"):
         run_agent = run_q_learning_agent
@@ -24,7 +24,7 @@ def compare_epsilon_decay(num_episodes, random_seed, config, eps_decay_factors, 
     results = []
     for i in range(len(eps_decay_factors)):
         result = run_agent(WarehouseEnv(
-            config), num_episodes=num_episodes, alpha=alpha, gamma=gamma,  eps_decay_factor=eps_decay_factors[i], random_seed=random_seed)
+            config), num_episodes=num_episodes, alpha=alpha, gamma=gamma,  eps_decay_factor=eps_decay_factors[i], random_seed=random_seed, Q=Q)
         results.append(result)
     # Episodes
     plt.xlabel('Steps')
@@ -69,7 +69,7 @@ def compare_epsilon_decay(num_episodes, random_seed, config, eps_decay_factors, 
               results[i].visited_states[num_episodes*100-int(num_episodes*100/5)], "("+str(results[i].visited_states[num_episodes*100])+")")
 
 
-def compare_alpha(num_episodes, random_seed, config, eps_decay_factor, alphas, gamma, learner):
+def compare_alpha(num_episodes, random_seed, config, eps_decay_factor, alphas, gamma, learner, Q=None):
     run_agent = None
     if(learner == "Q-Learning"):
         run_agent = run_q_learning_agent
@@ -80,7 +80,7 @@ def compare_alpha(num_episodes, random_seed, config, eps_decay_factor, alphas, g
     results = []
     for i in range(len(alphas)):
         result = run_agent(WarehouseEnv(
-            config), num_episodes=num_episodes, alpha=alphas[i], gamma=gamma,  eps_decay_factor=eps_decay_factor, random_seed=random_seed)
+            config), num_episodes=num_episodes, alpha=alphas[i], gamma=gamma,  eps_decay_factor=eps_decay_factor, random_seed=random_seed, Q=Q)
         results.append(result)
     # Episodes
     plt.xlabel('Episoden')
@@ -120,7 +120,7 @@ def compare_alpha(num_episodes, random_seed, config, eps_decay_factor, alphas, g
               results[i].get_mean_step_reward_last_n_episodes())
 
 
-def compare_gamma(num_episodes, random_seed, config, eps_decay_factor, alpha, gammas, learner):
+def compare_gamma(num_episodes, random_seed, config, eps_decay_factor, alpha, gammas, learner, Q=None):
     run_agent = None
     if(learner == "Q-Learning"):
         run_agent = run_q_learning_agent
@@ -131,7 +131,7 @@ def compare_gamma(num_episodes, random_seed, config, eps_decay_factor, alpha, ga
     results = []
     for i in range(len(gammas)):
         result = run_agent(WarehouseEnv(
-            config), num_episodes=num_episodes, alpha=alpha, gamma=gammas[i],  eps_decay_factor=eps_decay_factor, random_seed=random_seed)
+            config), num_episodes=num_episodes, alpha=alpha, gamma=gammas[i],  eps_decay_factor=eps_decay_factor, random_seed=random_seed, Q=Q)
         results.append(result)
     # Episodes
     plt.xlabel('Episoden')

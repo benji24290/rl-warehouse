@@ -33,24 +33,26 @@ random_seed = 60
 config = EnvConfig(seed=1234,  turns=100)
 
 
-alphas = [0.5, 0.6, 0.7, 0.8, 0.9]
+#alphas = [0.5, 0.6, 0.7, 0.8, 0.9]
 gammas = [0.9, 0.8, 0.7, 0.6, 0.5]
+alphas = [0.4, 0.3, 0.2, 0.1, 0.01]
+
+
 eps_decay_factors = [0.9985, 0.999, 0.9995, 0.9999, 1]
 # eps_decay_factors = [1]
 best_epsilon_dec_q = 0.99999374970701
-best_alpha_q = 0.9
+best_alpha_q = 0.1
 best_gamma_q = 0.8
 
 best_epsilon_dec_sarsa = 0.99999374970701
-best_alpha_sarsa = 0.6
-best_gamma_sarsa = 0.6
+best_alpha_sarsa = 0.1
+best_gamma_sarsa = 0.9
 
 # To deisable sections of this experiment
-create_heu = False
 evaluate_params = False
-train = False
+create_heu = False
+train = True
 compare_policies = False  # train also needs to be true
-compare_heu = True
 
 
 if __name__ == '__main__':
@@ -60,31 +62,32 @@ if __name__ == '__main__':
 
     if(evaluate_params):
         # Q-Learning
-
+        heu_env = WarehouseEnv(config)
         compare_epsilon_decay(num_episodes=num_episodes, random_seed=random_seed, gamma=gamma,
-                              alpha=alpha, config=config, eps_decay_factors=eps_decay_factors, learner="Q-Learning")
+                              alpha=alpha, config=config, eps_decay_factors=eps_decay_factors, learner="Q-Learning", Q=heu_env.rewards.import_q("heuristic.csv"))
         compare_alpha(num_episodes=num_episodes, random_seed=random_seed,
-                      config=config, eps_decay_factor=eps_decay_factor, gamma=gamma, learner="Q-Learning", alphas=alphas)
+                      config=config, eps_decay_factor=eps_decay_factor, gamma=gamma, learner="Q-Learning", alphas=alphas, Q=heu_env.rewards.import_q("heuristic.csv"))
 
         compare_gamma(num_episodes=num_episodes, random_seed=random_seed,
-                      config=config, eps_decay_factor=eps_decay_factor, alpha=alpha, learner="Q-Learning", gammas=gammas)
+                      config=config, eps_decay_factor=eps_decay_factor, alpha=alpha, learner="Q-Learning", gammas=gammas, Q=heu_env.rewards.import_q("heuristic.csv"))
 
         # Sarsa
-
         compare_epsilon_decay(num_episodes=num_episodes, random_seed=random_seed, gamma=gamma, alpha=alpha,
-                              config=config, eps_decay_factors=eps_decay_factors, learner="Sarsa")
+                              config=config, eps_decay_factors=eps_decay_factors, learner="Sarsa", Q=heu_env.rewards.import_q("heuristic.csv"))
         compare_alpha(num_episodes=num_episodes, random_seed=random_seed,
-                      config=config, eps_decay_factor=eps_decay_factor, gamma=gamma, learner="Sarsa", alphas=alphas)
+                      config=config, eps_decay_factor=eps_decay_factor, gamma=gamma, learner="Sarsa", alphas=alphas, Q=heu_env.rewards.import_q("heuristic.csv"))
         compare_gamma(num_episodes=num_episodes, random_seed=random_seed,
-                      config=config, eps_decay_factor=eps_decay_factor, alpha=alpha, learner="Sarsa", gammas=gammas)
+                      config=config, eps_decay_factor=eps_decay_factor, alpha=alpha, learner="Sarsa", gammas=gammas, Q=heu_env.rewards.import_q("heuristic.csv"))
 
     if(train):
         # train policy with best parameters
+        heu_env = WarehouseEnv(config)
+
         results_sarsa = run_sarsa_agent(WarehouseEnv(
-            config), num_episodes=train_episodes, alpha=best_alpha_sarsa, gamma=best_gamma_sarsa, eps_decay_factor=best_epsilon_dec_sarsa, random_seed=random_seed)
+            config), num_episodes=train_episodes, alpha=best_alpha_sarsa, gamma=best_gamma_sarsa, eps_decay_factor=best_epsilon_dec_sarsa, random_seed=random_seed, Q=heu_env.rewards.import_q("heuristic.csv"))
 
         results_q_learning = run_q_learning_agent(WarehouseEnv(
-            config), num_episodes=train_episodes, alpha=best_alpha_q, gamma=best_gamma_q, eps_decay_factor=best_epsilon_dec_q, random_seed=random_seed)
+            config), num_episodes=train_episodes, alpha=best_alpha_q, gamma=best_gamma_q, eps_decay_factor=best_epsilon_dec_q, random_seed=random_seed, Q=heu_env.rewards.import_q("heuristic.csv"))
         # Plot Rewards
         plt.xlabel('Episoden')
         plt.ylabel('∅-Reward pro Step')
@@ -97,7 +100,7 @@ if __name__ == '__main__':
         plt.show()
 
         # Plot TD-Error
-        plt.xlabel('Steps')
+        plt.xlabel('Episoden')
         plt.ylabel('Squared TD-Error')
         # should not be in same graph and should be log
         window_errors = results_sarsa.plot_squared_td_errors(
@@ -110,7 +113,7 @@ if __name__ == '__main__':
         plt.show()
 
         # Plot visited
-        plt.xlabel('Steps')
+        plt.xlabel('Episoden')
         plt.ylabel('Besuchte S,A Paare')
         # should not be in same graph and should be log
         window_visited = results_sarsa.plot_visited_s_a(
@@ -122,7 +125,7 @@ if __name__ == '__main__':
         plt.legend()
         plt.show()
 
-        plt.xlabel('Steps')
+        plt.xlabel('Episoden')
         plt.ylabel('Epsilon')
         window_epsilon = results_q_learning.plot_epsilons(
             label='Q-Learning',  std=False)
@@ -152,6 +155,10 @@ if __name__ == '__main__':
 
         rew_h_v4 = heuristic(config, count=1000, version='v4')
 
+        heu_env = WarehouseEnv(config)
+        heur_policy = run_policy_test_agent(
+            env=heu_env, num_episodes=1000, Q=heu_env.rewards.import_q("heuristic.csv"), random_seed=random_seed)
+
         plt.xlabel('Episoden')
         plt.ylabel('∅-Reward pro Step')
         results_q_learning_policy.plot_episode_rewards(
@@ -160,31 +167,12 @@ if __name__ == '__main__':
             label='Sarsa',  std=False)
         rew_h_v4.plot_episode_rewards(
             label='Heuristik',  std=False)
+        heur_policy.plot_episode_rewards(
+            label='Heur-poli',  std=False)
         plt.legend()
         plt.show()
 
         results_q_learning_policy.plot_step_rewards_of_episode(
             980)
         results_sarsa_policy.plot_step_rewards_of_episode(980)
-        rew_h_v4.plot_step_rewards_of_episode(980)
-
-    if(compare_heu):
-        # Test learned Policies
-        heu_env = WarehouseEnv(config)
-        heur_policy = run_policy_test_agent(
-            env=heu_env, num_episodes=1000, Q=heu_env.rewards.import_q("heuristic.csv"), random_seed=random_seed)
-
-        rew_h_v4 = heuristic(config, count=1000, version='v4')
-
-        plt.xlabel('Episoden')
-        plt.ylabel('∅-Reward pro Step')
-        heur_policy.plot_episode_rewards(
-            label='Heur-poli',  std=False)
-        rew_h_v4.plot_episode_rewards(
-            label='Heuristik',  std=False)
-        plt.legend()
-        plt.show()
-
-        heur_policy.plot_step_rewards_of_episode(
-            980)
         rew_h_v4.plot_step_rewards_of_episode(980)

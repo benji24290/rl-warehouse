@@ -4,8 +4,10 @@ import math
 
 class SarsaAgent:
 
-    def __init__(self, actions, alpha=0.4, gamma=0.9, random_seed=0):
+    def __init__(self, actions, alpha=0.4, gamma=0.9, random_seed=0, Q=None):
         self.Q = {}
+        if(Q):
+            self.Q = Q
         self.actions = actions
         self.alpha = alpha
         self.gamma = gamma
@@ -56,7 +58,7 @@ class SarsaAgent:
 
 
 def run_sarsa_agent(env, num_episodes, alpha,
-                    gamma, eps_decay_factor, random_seed):
+                    gamma, eps_decay_factor, random_seed, Q=None):
     print('Sarsa')
     print('____________________________________________________________')
     episode_scores = []
@@ -66,7 +68,7 @@ def run_sarsa_agent(env, num_episodes, alpha,
     actions = env.actions.actions_extended
 
     agent = SarsaAgent(actions=actions, alpha=alpha,
-                       gamma=gamma, random_seed=random_seed)
+                       gamma=gamma, random_seed=random_seed, Q=Q)
 
     # Storing the path taken and score for the best episode
     best_score = -math.inf

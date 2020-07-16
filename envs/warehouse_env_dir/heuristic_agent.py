@@ -54,8 +54,7 @@ def heuristic(config, count=1000, version='v1'):
                         a_id = req.article.id
             # prio 2: store articles from arrival
             if(action == None):
-                position = env.actions.store_oracle()
-                if position:
+                if len(env.storage.get_possible_spaces()) > 0:
                     for arr_space in env.arrivals.arrivals:
                         if arr_space.article:
                             action = 'STORE'
@@ -69,37 +68,24 @@ def heuristic(config, count=1000, version='v1'):
                         0)+env.arrivals.get_simple_arrivals_state().count(0)
                     if (possible.id not in env.storage.get_simple_storage_state() and empty_spaces_storage_arrival > 0):
 
-                        if(check_for_orders):
-                            if(empty_spaces_storage_arrival-len(env.orders.orders) > 0):
-                                if len(env.orders.orders) < 1:
-                                    action = 'ORDER'
-                                    a_id = possible.id
-                                else:
-                                    for order in env.orders.orders:
-                                        if(order.article.id is not possible.id):
-                                            # print(possible.id, 'is not in:',
-                                            #      env.storage.get_simple_storage_state())
-                                            action = 'ORDER'
-                                            a_id = possible.id
-                                        else:
-                                            # print(possible.id, 'was already ordered',
-                                            #      order.article.id)
-                                            pass
+                        if(empty_spaces_storage_arrival-len(env.orders.orders) > 0):
+                            if len(env.orders.orders) < 1:
+                                action = 'ORDER_'+str(possible.id)
+                                a_id = possible.id
                             else:
-                                # print('empty=', empty_spaces_storage_arrival,
-                                #     'open orders=', len(env.orders.orders))
-                                pass
-                        else:
-                            action = 'ORDER'
-                            a_id = possible.id
+                                for order in env.orders.orders:
+                                    if(order.article.id is not possible.id):
+                                        # print(possible.id, 'is not in:',
+                                        #      env.storage.get_simple_storage_state())
+                                        action = 'ORDER_'+str(possible.id)
+                                        a_id = possible.id
             # prio 4: do nothing
             if(can_idle):
                 if(action == None):
                     action = 'IDLE'
-            else:
-                action = random.choice(env.actions.actions)
             Q[env.get_state(), action] = 100
-            [state, reward, game_over, debug] = env.step(action, a_id)
+            #print(env.get_state(), action)
+            [state, reward, game_over, debug] = env.step(action)
             if env.game_over:
                 break
         if i % 1000 == 0:
@@ -130,7 +116,7 @@ def create_heuristic_policy(config):
             if(action == best_action):
                 Q[(state, action)] = 100
             else:
-                print(action, "not", best_action)
+                # print(action, "not", best_action)
                 Q[(state, action)] = 0
         i += 1
     env.rewards.q = Q
@@ -142,7 +128,50 @@ def evaluate_state(state, env):
     requests = state[3:5]
     arrivals = state[5:7]
     orders = state[7:9]
-    possible_art = env.possible_articles.get_possible_articles()
+    possible_art = env.possible_articles.get_possible_articles()[::-1]
+    # prio 1: fullfill requests if article is in store
+    action = None
+    for req in requests:
+        for space in storage:
+            if req != 0 and req == space and action == None:
+                action = 'DELIVER'
+    # prio 2: store articles from arrival
+    if(action == None):
+        if storage.count(0) > 0:
+            for arr_space in arrivals:
+                if arr_space > 0:
+                    action = 'STORE'
+    # prio 3: order article if not in store or ordered
+    if(action == None):
+                # TODO least stored
+        for possible in env.possible_articles.articles:
+            empty_spaces_storage_arrival = storage.count(
+                0)+arrivals.count(0)
+            if (possible.id not in storage and empty_spaces_storage_arrival > 0):
+                if(empty_spaces_storage_arrival-2-orders.count(0) > 0):
+                    if 2-orders.count(0) < 1:
+                        action = 'ORDER_'+str(possible.id)
+                    else:
+                        for order in orders:
+                            if(order is not possible.id):
+                                        # print(possible.id, 'is not in:',
+                                        #      env.storage.get_simple_storage_state())
+                                action = 'ORDER_'+str(possible.id)
+    # prio 4: idle
+    if(action == None):
+        action = 'IDLE'
+
+    return action
+    # When 000,00,00,00
+    # print(storage, requests, arrivals, orders)
+
+
+def evaluate_state_old(state, env):
+    storage = state[0:3]
+    requests = state[3:5]
+    arrivals = state[5:7]
+    orders = state[7:9]
+    possible_art = env.possible_articles.get_possible_articles()[::-1]
     # prio 1: fullfill requests if article is in store
     for art in possible_art:
         if(requests.count(art) > 0 and storage.count(art) > 0):
@@ -153,10 +182,15 @@ def evaluate_state(state, env):
             return 'STORE'
     # prio 3: order article if not in store or ordered
     for art in possible_art:
-        if(storage.count(art) < 1 and (storage.count(0)+arrivals.count(0)-2+orders.count(0)) > 0):
-            if(arrivals.count(art) < 1 and orders.count(art) < 1):
+        if(storage.count(art)+orders.count(art) < 1 and (storage.count(0)+arrivals.count(0)-2+orders.count(0)) > 0):
+            if(arrivals.count(art) < 1):
                 return 'ORDER_'+str(art)
+    for art in possible_art:
+        if(storage.count(art)-requests.count(art) < 1 and (storage.count(0)+arrivals.count(0)-2+orders.count(0)) > 0):
+            if(arrivals.count(art) < 1):
+                return 'ORDER_'+str(art)
+    # prio 4: idle
     return 'IDLE'
 
     # When 000,00,00,00
-    #print(storage, requests, arrivals, orders)
+    # print(storage, requests, arrivals, orders)
