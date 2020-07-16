@@ -51,8 +51,8 @@ best_gamma_sarsa = 0.9
 # To deisable sections of this experiment
 evaluate_params = False
 create_heu = False
-train = True
-compare_policies = False  # train also needs to be true
+train = False
+compare_policies = True  # train also needs to be true
 
 
 if __name__ == '__main__':
@@ -155,10 +155,6 @@ if __name__ == '__main__':
 
         rew_h_v4 = heuristic(config, count=1000, version='v4')
 
-        heu_env = WarehouseEnv(config)
-        heur_policy = run_policy_test_agent(
-            env=heu_env, num_episodes=1000, Q=heu_env.rewards.import_q("heuristic.csv"), random_seed=random_seed)
-
         plt.xlabel('Episoden')
         plt.ylabel('∅-Reward pro Step')
         results_q_learning_policy.plot_episode_rewards(
@@ -167,8 +163,6 @@ if __name__ == '__main__':
             label='Sarsa',  std=False)
         rew_h_v4.plot_episode_rewards(
             label='Heuristik',  std=False)
-        heur_policy.plot_episode_rewards(
-            label='Heur-poli',  std=False)
         plt.legend()
         plt.show()
 
