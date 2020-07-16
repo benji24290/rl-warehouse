@@ -33,21 +33,23 @@ random_seed = 60
 config = EnvConfig(seed=1234,  turns=100)
 
 
-alphas = [0.5, 0.6, 0.7, 0.8, 0.9]
-gammas = [0.9, 0.8, 0.7, 0.6, 0.5]
+#alphas = [0.5, 0.6, 0.7, 0.8, 0.9]
+#gammas = [0.9, 0.8, 0.7, 0.6, 0.5]
+alphas = [0.4, 0.3, 0.2, 0.1, 0.01]
+gammas = [0.9995, 0.999, 0.995, 0.99, 0.95]
 eps_decay_factors = [0.9985, 0.999, 0.9995, 0.9999, 1]
 # eps_decay_factors = [1]
 best_epsilon_dec_q = 0.99999374970701
-best_alpha_q = 0.9
-best_gamma_q = 0.8
+best_alpha_q = 0.1
+best_gamma_q = 0.95
 
 best_epsilon_dec_sarsa = 0.99999374970701
-best_alpha_sarsa = 0.6
-best_gamma_sarsa = 0.6
+best_alpha_sarsa = 0.1
+best_gamma_sarsa = 0.9
 
 # To deisable sections of this experiment
 evaluate_params = False
-train = True
+train = False
 compare_policies = True  # train also needs to be true
 
 

@@ -33,10 +33,10 @@ def compare_epsilon_decay(num_episodes, random_seed, config, eps_decay_factors, 
     for i in range(len(results)):
         if i == 0:
             window_rewards = results[i].plot_epsilons(
-                label='E1.'+str(i+1),  std=False)
+                label='E2.'+str(i+1),  std=False)
         else:
             results[i].plot_epsilons(
-                label='E1.'+str(i+1), std=False)
+                label='E2.'+str(i+1), std=False)
 
     plt.title(learner+' Epsilon-Decay - Window=' +
               str(window_rewards))
@@ -49,10 +49,10 @@ def compare_epsilon_decay(num_episodes, random_seed, config, eps_decay_factors, 
     for i in range(len(results)):
         if i == 0:
             window_errors = results[i].plot_visited_s_a(
-                label='E1.'+str(i+1),  std=False)
+                label='E2.'+str(i+1),  std=False)
         else:
             results[i].plot_visited_s_a(
-                label='E1.'+str(i+1),  std=False)
+                label='E2.'+str(i+1),  std=False)
     plt.title(learner+' Besuchte S,A - Window=' +
               str(window_errors))
     plt.legend()
@@ -60,11 +60,11 @@ def compare_epsilon_decay(num_episodes, random_seed, config, eps_decay_factors, 
 
     print("AVG "+learner+" - Last 50 Episodes")
     for i in range(len(results)):
-        print("E1."+str(i+1)+":",
+        print("E2."+str(i+1)+":",
               results[i].get_mean_step_reward_last_n_episodes())
     print("New States  state n/5 - "+learner)
     for i in range(len(results)):
-        print("E1."+str(i+1)+":",
+        print("E2."+str(i+1)+":",
               results[i].visited_states[num_episodes*100] -
               results[i].visited_states[num_episodes*100-int(num_episodes*100/5)], "("+str(results[i].visited_states[num_episodes*100])+")")
 
@@ -89,10 +89,10 @@ def compare_alpha(num_episodes, random_seed, config, eps_decay_factor, alphas, g
     for i in range(len(results)):
         if i == 0:
             window_rewards = results[i].plot_episode_rewards(
-                label='A1.'+str(i+1),  std=False)
+                label='A2.'+str(i+1),  std=False)
         else:
             results[i].plot_episode_rewards(
-                label='A1.'+str(i+1),  std=False)
+                label='A2.'+str(i+1),  std=False)
 
     plt.title(learner+' Rewards - Window=' +
               str(window_rewards))
@@ -105,10 +105,10 @@ def compare_alpha(num_episodes, random_seed, config, eps_decay_factor, alphas, g
     for i in range(len(results)):
         if i == 0:
             window_errors = results[i].plot_squared_td_errors(
-                label='A1.'+str(i+1),  std=False)
+                label='A2.'+str(i+1),  std=False)
         else:
             results[i].plot_squared_td_errors(
-                label='A1.'+str(i+1),  std=False)
+                label='A2.'+str(i+1),  std=False)
     plt.title(learner+' TD-Error - Window=' +
               str(window_errors))
     plt.legend()
@@ -116,7 +116,7 @@ def compare_alpha(num_episodes, random_seed, config, eps_decay_factor, alphas, g
 
     print("AVG "+learner+" - Last 50 Episodes")
     for i in range(len(results)):
-        print("A1."+str(i+1)+":",
+        print("A2."+str(i+1)+":",
               results[i].get_mean_step_reward_last_n_episodes())
 
 
@@ -140,10 +140,10 @@ def compare_gamma(num_episodes, random_seed, config, eps_decay_factor, alpha, ga
     for i in range(len(results)):
         if i == 0:
             window_rewards = results[i].plot_episode_rewards(
-                label='G1.'+str(i+1),  std=False)
+                label='G2.'+str(i+1),  std=False)
         else:
             results[i].plot_episode_rewards(
-                label='G1.'+str(i+1),  std=False)
+                label='G2.'+str(i+1),  std=False)
 
     plt.title(learner+' Rewards - Window=' +
               str(window_rewards))
@@ -156,10 +156,10 @@ def compare_gamma(num_episodes, random_seed, config, eps_decay_factor, alpha, ga
     for i in range(len(results)):
         if i == 0:
             window_errors = results[i].plot_squared_td_errors(
-                label='G1.'+str(i+1),  std=False)
+                label='G2.'+str(i+1),  std=False)
         else:
             results[i].plot_squared_td_errors(
-                label='G1.'+str(i+1),  std=False)
+                label='G2.'+str(i+1),  std=False)
     plt.title(learner+' TD-Error - Window=' +
               str(window_errors))
     plt.legend()
@@ -167,7 +167,7 @@ def compare_gamma(num_episodes, random_seed, config, eps_decay_factor, alpha, ga
 
     print("AVG "+learner+" - Last 50 Episodes")
     for i in range(len(results)):
-        print("G1."+str(i+1)+":",
+        print("G2."+str(i+1)+":",
               results[i].get_mean_step_reward_last_n_episodes())
 
 
