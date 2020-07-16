@@ -72,14 +72,14 @@ def heuristic(config, count=1000, version='v1'):
                         if(check_for_orders):
                             if(empty_spaces_storage_arrival-len(env.orders.orders) > 0):
                                 if len(env.orders.orders) < 1:
-                                    action = 'ORDER'
+                                    action = 'ORDER_'+str(possible.id)
                                     a_id = possible.id
                                 else:
                                     for order in env.orders.orders:
                                         if(order.article.id is not possible.id):
                                             # print(possible.id, 'is not in:',
                                             #      env.storage.get_simple_storage_state())
-                                            action = 'ORDER'
+                                            action = 'ORDER_'+str(possible.id)
                                             a_id = possible.id
                                         else:
                                             # print(possible.id, 'was already ordered',
@@ -90,7 +90,7 @@ def heuristic(config, count=1000, version='v1'):
                                 #     'open orders=', len(env.orders.orders))
                                 pass
                         else:
-                            action = 'ORDER'
+                            action = 'ORDER_'+str(possible.id)
                             a_id = possible.id
             # prio 4: do nothing
             if(can_idle):
@@ -99,6 +99,7 @@ def heuristic(config, count=1000, version='v1'):
             else:
                 action = random.choice(env.actions.actions)
             Q[env.get_state(), action] = 100
+            env.rewards.all_actions.append(action)
             [state, reward, game_over, debug] = env.step(action, a_id)
             if env.game_over:
                 break

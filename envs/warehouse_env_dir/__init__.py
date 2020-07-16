@@ -141,6 +141,9 @@ if __name__ == '__main__':
     if(compare_policies):
         # Test learned Policies
         q_env = WarehouseEnv(config)
+        actions = q_env.actions.actions_extended
+        episodes = 1000
+
         results_q_learning_policy = run_policy_test_agent(
             env=q_env, num_episodes=1000, Q=q_env.rewards.import_q("q-learning.csv"), random_seed=random_seed)
         sarsa_env = WarehouseEnv(config)
@@ -148,6 +151,10 @@ if __name__ == '__main__':
             env=sarsa_env, num_episodes=1000, Q=sarsa_env.rewards.import_q("sarsa.csv"), random_seed=random_seed)
 
         rew_h_v4 = heuristic(config, count=1000, version='v4')
+
+        results_q_learning_policy.print_actions(actions, episodes)
+        results_sarsa_policy.print_actions(actions, episodes)
+        rew_h_v4.print_actions(actions, episodes)
 
         plt.xlabel('Episoden')
         plt.ylabel('∅-Reward pro Step')

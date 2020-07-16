@@ -66,6 +66,7 @@ def run_policy_test_agent(env, num_episodes, random_seed, Q):
         episode_actions = []
         while True:
             action = agent.act(state)
+            env.rewards.all_actions.append(action)
             new_state, reward, done, debug = env.step(action)
 
             episode_score += reward
