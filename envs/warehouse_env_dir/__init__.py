@@ -171,3 +171,10 @@ if __name__ == '__main__':
             980)
         results_sarsa_policy.plot_step_rewards_of_episode(980)
         rew_h_v4.plot_step_rewards_of_episode(980)
+
+        results_q_learning_policy.plot_state_info_from_episode(
+            980, 'Q-Learning ')
+        results_sarsa_policy.plot_state_info_from_episode(
+            980, 'Sarsa ')
+        rew_h_v4.plot_state_info_from_episode(
+            980, 'Heuristik ')

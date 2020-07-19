@@ -38,6 +38,7 @@ class Rewards():
         self.rewards_action_order = []
         self.all_actions = []
         self.q = None
+        self.state_info_per_episode = []
 
     def reset_episode(self):
         if self.step > 0:
@@ -79,6 +80,56 @@ class Rewards():
 
     def add_reward_action_order(self, reward):
         self.rewards_action_order.append(reward)
+
+    def add_state_info(self, state, possible_articles):
+        articles = []
+        for art in possible_articles:
+            storage = state[0:3].count(art)
+            requests = state[3:5].count(art)
+            arrivals = state[5:7].count(art)
+            orders = state[7:9].count(art)
+            articles.append([storage, requests, arrivals, orders])
+        try:
+            self.state_info_per_episode[self.episode].append(articles)
+        except:
+            self.state_info_per_episode.append([articles])
+
+    def plot_state_info_from_episode(self, episode, title=""):
+        self.reset_episode()
+        try:
+            plt.xlabel('Steps')
+
+            plt.ylabel('Anzahl')
+            style = "-"
+            for art in range(len(self.state_info_per_episode[episode][0])):
+                if(art % 2 != 0):
+                    style = "--"
+                storage = []
+                requests = []
+                arrivals = []
+                orders = []
+                for state_info_art in self.state_info_per_episode[episode]:
+                    storage.append(state_info_art[art][0])
+                    requests.append(state_info_art[art][1])
+                    arrivals.append(state_info_art[art][2])
+                    orders.append(state_info_art[art][3])
+                plt.yticks(np.arange(15), [
+                    '0', '1', '2', '', '0', '1', '2', '', '0', '1', '2', '', '0', '1', '2'])
+                plt.plot(
+                    np.add(storage, 12).tolist(), label='Lager Artikel '+str(art+1), linestyle=style, color="C0")
+                plt.plot(
+                    np.add(requests, 8).tolist(), label='Aufträge Artikel '+str(art+1), linestyle=style, color="C1")
+                plt.plot(
+                    np.add(arrivals, 4).tolist(), label='Ankunft Artikel '+str(art+1), linestyle=style, color="C2")
+                plt.plot(
+                    orders, label='Bestellungen Artikel '+str(art+1), linestyle=style, color="C3")
+            # plt.plot(self.all_rewards_action_store[episode], label='a_store')
+            # plt.plot(self.all_rewards_action_order[episode], label='a_order')
+            plt.title(title+'State Episode '+str(episode))
+            plt.legend()
+            plt.show()
+        except:
+            log.error('plot_episode_rewards:', 'no valid episode', episode)
 
     def get_pos_neg_rewards(self, array):
         pos = 0

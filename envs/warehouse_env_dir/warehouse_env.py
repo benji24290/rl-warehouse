@@ -80,6 +80,8 @@ class WarehouseEnv(gym.Env):
             reward = 0
             self.game_over = True
             # state, reward, gameover, debug info
+        self.rewards.add_state_info(state=self.get_state(
+        ), possible_articles=self.possible_articles.get_possible_articles())
         return resulting_state, reward, self.game_over, None
 
     def _post_step(self):
