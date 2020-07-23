@@ -276,6 +276,43 @@ class Rewards():
         ax1.set_title('Exploration')
         plt.show()
 
+    def plot_exploration_both(self, other_eps, other_visited):
+        window = int(len(self.visited_states)/20)
+        time_series_df_eps = pd.DataFrame(
+            self.epsilons)
+        smooth_eps = time_series_df_eps.rolling(window).mean()
+        time_series_df_visited = pd.DataFrame(
+            self.visited_states)
+        smooth_visited = time_series_df_visited.rolling(window).mean()
+
+        time_series_df_eps_other = pd.DataFrame(
+            other_eps)
+        smooth_eps_other = time_series_df_eps_other.rolling(window).mean()
+        time_series_df_visited_other = pd.DataFrame(
+            other_visited)
+        smooth_visited_other = time_series_df_visited_other.rolling(
+            window).mean()
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        ax1.set_xlabel('Anzahl Steps')
+        ax1.set_ylabel('Epsilon')
+        ax2.set_ylabel('Besuchte S,A Paare')
+        ax1.plot(smooth_eps, label="Epsilon Q-Learning",
+                 linewidth=2, color="C0", linestyle="--")
+        ax1.plot(smooth_eps_other, label="Epsilon Sarsa",
+                 linewidth=2, color="C1", linestyle="--")
+        ax2.plot(smooth_visited, label="Visited Q-Learning",
+                 linewidth=2, color="C0")
+        ax2.plot(smooth_visited_other, label="Visited Sarsa",
+                 linewidth=2, color="C1")
+        lines_1, labels_1 = ax1.get_legend_handles_labels()
+        lines_2, labels_2 = ax2.get_legend_handles_labels()
+        lines = lines_1 + lines_2
+        labels = labels_1 + labels_2
+        ax2.legend(lines, labels, loc=0)
+        ax1.set_title('Exploration - Window='+str(window))
+        plt.show()
+
     def plot_episode_step(self, episode, name='Episode rewards'):
         '''Plots the all rewards for a given episode'''
         self.reset_episode()
