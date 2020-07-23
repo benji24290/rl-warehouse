@@ -103,7 +103,7 @@ if __name__ == '__main__':
                   str(window_errors))
         plt.legend()
         plt.show()
-
+        '''
         # Plot visited
         plt.xlabel('Steps')
         plt.ylabel('Besuchte S,A Paare')
@@ -128,7 +128,9 @@ if __name__ == '__main__':
                   str(window_epsilon))
         plt.legend()
         plt.show()
-
+        '''
+        results_q_learning.plot_exploration_both(
+            other_eps=results_sarsa.epsilons, other_visited=results_sarsa.visited_states)
         results_sarsa.plot_pos_neg_rewards(name='Sarsa')
         results_q_learning.plot_pos_neg_rewards(name='Q-Learning')
 
