@@ -1,0 +1,21 @@
+\chapter{Einleitung}
+Durch die Zunahme des Onlineshoppings und durch Next-Day oder sogar Same-Day-Lieferungen, steigen die Anforderungen an die Logistikprozesse im Hintergrund. Solche Logistikprozesse können komplex werden und müssen auch auf diverse Einflüsse reagieren können. 
+Maschinelles Lernen könnte bei der Optimierung solcher Prozesse eine erhebliche Rolle spielen. Es gibt diverse algorithmische Ansätze, wobei in drei Gruppen aufgeteilt wird: überwachtes, unüberwachtes und bestärkendes Lernen. 
+In dieser Thesis wird das bestärkende Lernen, auch Reinforcement Learning genannt, behandelt. Oft wird von Reinforcement Learning in Zusammenhang mit Spielen berichtet – sei es mit konventionellen Brettspielen wie Go oder Videospielen wie StarCraft. In dieser Arbeit wird überprüft, ob sich Reinforcement Learning eignet, um selbständig eine Policy zu erlernen, welche ein vereinfachtes Lager bewirtschaften kann (einlagern, bestellen, ausliefern). Des Weiteren soll aufgezeigt werden, ob sich Reinforcement Learning auch nach einer Skalierung des vereinfachten Beispiels immer noch eignet. Damit soll die Arbeit Aufschluss darüber geben, ob Reinforcement Learning auch in einem reellen Lager mit mehreren Tausend Artikeln funktionieren kann.
+Jing-Sheng Song et al. \cite{inventory_management} haben prognostiziert, dass in Zukunft der Bedarf an Algorithmen, die in absehbarer Zeit die Abläufe einer Supply-Chain optimieren, immer stärker zunimmt. Es soll möglich sein, eine neue Anforderung festzulegen, sodass der Algorithmus selbständig sämtliche Teile der Supply-Chain optimiert. Die Mehrheit der Literatur befasst sich mit der Supply-Chain als Ganzes. So haben S. Kamal Chaharsooghi et al. \cite{rl_supply} erfolgreich eine Supply-Chain-Strategie durch Reinforcement Learning erlernt, die das Simulationsspiel «The Beergame App» mit einem zufriedenstellenden Ergebnis spielt. Das Warenhaus an sich wird dabei jedoch kaum betrachtet. In den Warenhäusern ist neben dem Optimieren der Bestell- und Lieferabläufe auch das Optimieren der Lagerung selbst interessant. Um ein Lager zu optimieren, müssen Strategien festgelegt werden, nach denen die Artikel eingelagert werden. Eine neue Paketgrösse kann unter Umständen zu einer Anpassung der gesamten Strategie führen. Des Weiteren wird es mit zunehmenden Faktoren, wie der Lagertemperatur von Artikeln oder der Beliebtheit eines Artikels, auf die die Strategie reagieren soll, immer schwieriger, eine passende Strategie zu definieren.
+
+\section{Forschungsfragen}
+\label{sec:ff}
+In dieser Engineering-Arbeit werden folgende Forschungsfragen mithilfe einer entwickelten Simulationsumgebung, welche im \autoref{sec:warehouse} definiert ist, untersucht. Diese Umgebung entspricht auch dem Geltungsbereich.
+\begin{itemize}
+	\item \textbf{Forschungsfrage 1:}
+\emph{Wie vergleicht sich die Performanz einer heuristischen Lagerverwaltungsstrategie mit einer durch Reinforcement Learning erlernten Strategie im zuvor definierten Environment?}
+	\item \textbf{Forschungsfrage 2:}
+\emph{Wie verhält sich die Performanz bei einer durch Reinforcement Learning erlernten Strategie mit einer zunehmenden Komplexität?}
+\end{itemize}
+
+\section{Abgrenzung und Vorgehensweise}
+Diese Arbeit soll eine Grundlage für zukünftige Forschung bieten. Dabei wird der Fokus hauptsächlich auf die Lagerbewirtschaftung gelegt. Es wird ein vereinfachtes Environment erstellt, welches nur Basisfunktionen bietet. Des Weiteren wird in dieser Arbeit aus zeitlichen Gründen das Augenmerk auf grundlegende Algorithmen gerichtet. 
+Um die beiden Forschungsfragen zu beantworten wird jeweils ein Experiment aufgebaut, welches die Performanz der Strategien mit dem durchschnittlich erhaltenen Reward vergleicht.
+\section{Struktur der Arbeit}
+Diese Arbeit ist wie folgt gegliedert: In Kapitel 2 wird eine Einführung ins Thema Reinforcement Learning gewährt, wobei der Fokus auf die grundlegenden Methoden und Algorithmen gelegt wird. In Kapitel 3 wird die das Environment definiert. In Kapitel 4 wird die angewendete Forschungsmethode beschrieben. In den Kapitel 5 und 6 werden die jeweiligen Experimente beschrieben, durchgeführt und die Resultate werden präsentiert. Anschliessend folgt in Kapitel 7 die Diskussion mit einem Ausblick auf weiterführende Arbeiten.

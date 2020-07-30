@@ -1,0 +1,50 @@
+\appendix
+\chapter{Anhang}
+\label{sec:Anhang}
+\section{Berechnung MDP - State-Values}
+\label{appendix:state-values}
+\begin{align}
+&\gamma=1\nonumber\\
+&\textbf{KB-NV} \nonumber\\
+&v_*(KBNV) =\gamma *( P(KBNV)* v_*(KBNV)+ P(BT1NV)* v_*(BT1NV))+R(A1) \nonumber \\
+&v_*(KBNV)= 1/2x +  9.5 -1= x \nonumber\\
+&v_*(KBNV)= 17\\
+&\textbf{KB-V} \nonumber\\
+&v_*(KBV)= \gamma *(P(KBV)* v_*(KBV)+ P(BT1V)* v_*(BT1V)) + R(A1) \nonumber \\
+&v_*(KBV)= 1/2x +  10-2 = x \nonumber\\
+&v_*(KBV)= 16\\
+&\textbf{BT1-V} \nonumber\\
+&v_*(BT1V)= \gamma *(P(A)* v_*(A)) + R(A3) \nonumber \\
+&v_*(BT1V)= 0 +20 = 20\\
+&\textbf{BT1-NV} \nonumber\\
+&v_*(BT1NV) = \gamma *(P(KT2V)* v_*(KT2V))+R(A1) \nonumber \\
+&v_*(BT1NV) = 20 -1= 19\\
+&\textbf{BT2-V} \nonumber\\
+&v_*(BT2V)= \gamma *(P(A)* v_*(A)) + R(A3) \nonumber \\
+&v_*(BT2V)= 0 +20 = 20
+\end{align}
+
+\section{Berechnung MDP - Action-Values}
+\label{appendix:action-values}
+\begin{align}
+&\gamma=1\nonumber\\
+&\textbf{KB-NV} \nonumber\\
+&q_*(KBNV,A1) = \gamma *(P(KBNV)* v_*(KBNV)+ P(BT1NV)* v_*(BT1NV))+R(A1) \nonumber \\
+&q_*(KBNV,A1)= 8.5 +  9.5 -1= 17\\
+&q_*(KBNV,A2) = \gamma *(P(KBV)* v_*(KBV)+ P(BT1V)* v_*(BT1V)) +R(KBNV, A2)\nonumber \\
+&q_*(KBNV,A2)= 8 +  10 -1 = 17\\
+&\textbf{KB-V} \nonumber\\
+&q_*(KBV,A1) = \gamma *(P(KBV)* v_*(KBV)+ P(BT1V)* v_*(BT1V)) + R(A1) \nonumber \\
+&q_*(KBV,A1)= 8 +  10-2 = 16\\
+&\textbf{BT1-V} \nonumber\\
+&q_*(BT1V,A3) = \gamma *(P(A)* v_*(A)) + R(A3) \nonumber \\
+&q_*(BT1V,A3)= 0 +20 = 20\\
+&\textbf{BT1-NV} \nonumber\\
+&q_*(BT1NV,A1) = \gamma *(P(KBNV)* v_*(KBNV))+R(A1) \nonumber \\
+&q_*(BT1NV,A1)= 17 -1= 16\\
+&q_*(BT1NV,A2) = \gamma *(P(BT2V)* v_*(BT2V)) +R(A2)\nonumber \\
+&q_*(BT1NV,A2)= 20 -1 = 19\\
+&\textbf{BT2-V} \nonumber\\
+&q_*(BT2V,A3) = \gamma *(P(A)* v_*(A)) + R(A3) \nonumber \\
+&q_*(BT2V,A3)= 0 +20 = 20
+\end{align}

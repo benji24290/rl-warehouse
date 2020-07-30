@@ -55,6 +55,8 @@ class WarehouseEnv(gym.Env):
         print('Env initialized seed:', self.seed)
         self._make_new_instances()
         self._print_env_state()
+        self.observation_space
+        self.action_space
 
     def step(self, action=None, article_id=None):
         if self.turn < self.turns:
@@ -183,6 +185,8 @@ class WarehouseEnv(gym.Env):
         self.storage = Storage(self.storage_spaces)
         self.actions = Actions(self)
         self.orders = Orders()
+        self.action_space = self.actions.actions_extended
+        self.observation_space = self.get_possible_states()
 
 
 def test_prob():
