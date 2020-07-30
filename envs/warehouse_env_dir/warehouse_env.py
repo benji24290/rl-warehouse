@@ -34,9 +34,6 @@ import sys
 import math
 
 
-# TODO Add docstrings
-
-
 class WarehouseEnv(gym.Env):
     def __init__(self, config):
         self.seed = config.seed
@@ -55,6 +52,8 @@ class WarehouseEnv(gym.Env):
         print('Env initialized seed:', self.seed)
         self._make_new_instances()
         self._print_env_state()
+        self.observation_space
+        self.action_space
 
     def step(self, action=None, article_id=None):
         if self.turn < self.turns:
@@ -109,17 +108,14 @@ class WarehouseEnv(gym.Env):
             self.arrivals.handle_arrivals(self.orders.update_orders()))
 
     def reset(self):
-        # print(self.get_state())
         self.game_over = False
         self.turn = 0
         self._make_new_instances()
         self.rewards.reset_episode()
         log.info('env reset')
-        # TODO extended state
         return self.get_state()
 
     def render(self):
-        # TODO render
         pass
 
     def _print_env_info(self):
@@ -182,6 +178,8 @@ class WarehouseEnv(gym.Env):
         self.storage = Storage(self.storage_spaces)
         self.actions = Actions(self)
         self.orders = Orders()
+        self.action_space = self.actions.actions_extended
+        self.observation_space = self.get_possible_states()
 
 
 def test_prob():
