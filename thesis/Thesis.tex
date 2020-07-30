@@ -1,0 +1,99 @@
+%Vorlage fuer Thesen an der FFHS
+\documentclass{ffhsthesis}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{amssymb}
+\usepackage{tabularx}
+\usepackage{hyperref}
+
+
+\begin{document}
+
+
+\dokumentTyp{Bachelor-Thesis}
+\studiengang{INF}
+\title{Optimierte Lagerverwaltungs-Strategie durch Reinforcement Learning}
+%\subtitle{Optionaler Untertitel} % optional
+%\titelbild[height=2cm,width=10cm]{ffhslogo}  % optional
+\author{Benjamin Cirmena}
+% \date{}
+\wohnort{Kehrsatz}
+%\referent{Name des Referenten\\ Titel\\Unterrichtetes Fach}
+\referent{Dr.\ Beat Tödtli\\Dozent bei der FHS St.Gallen}
+\eingereichtBei{Dr.\ Oliver Kamin\\Departement Informatik\\Departementsleiter} 
+
+%\dedication{Diese Thesis widme ich meiner Verlobten, die mich während des gesamten Studiums tatkräftig unterstützt hat.}
+
+\maketitle
+
+
+\begin{zusammenfassung}
+Lagerverwaltungssysteme benötigen durch die steigenden Anforderungen raffiniertere Strategien. Anpassungen in einem solchen System können einen grossen Einfluss auf die Strategie haben und würden daher eine Anpassung der Strategie benötigen. Mit Hilfe von Reinforcement Learning könnte eine solche Strategie selbstständig erlernt werden, welche möglicherweise die heuristische Strategie übertrifft.
+In dieser Arbeit wird ein erweiterbares Environment aufgebaut, mit dem möglichst unterschiedliche Lagersysteme dargestellt werden können. Anschliessend werden zwei Experimente aufgebaut, um die Performanz der durch Reinforcement Learning erlernten Strategien mit der heuristischen Strategie zu vergleichen. In den Experimenten werden die beiden Reinforcement Learning-Algorithmen Sarsa und Q-Learning verwendet. Dabei wird die erreichte Performanz, der durchschnittlich erreichte Reward, mit der Performanz der heuristischen Strategie verglichen. Die Resultate haben gezeigt, dass die beiden Algorithmen in den beiden Experimenten die heuristische Strategie übertroffen haben.
+\end{zusammenfassung}
+\newpage
+\begin{abstract}
+Warehouse management systems require more sophisticated policies due to the increasing requirements. Adjustments in such a system can have a major impact on the policy and would therefore require policy adjustments. With the use of reinforcement learning, such a policy could be learned autonomously, which could possibly outperform the heuristic policy.
+In this thesis an extensible environment is built, which allows to represent different storage systems. Subsequently, two experiments are set up to compare the performance of the strategies learned by reinforcement learning with the performance of the heuristic strategy. In the experiments the two reinforcement learning algorithms Sarsa and Q-Learning are used. The achieved performance, the average achieved reward, is compared with the performance of the heuristic strategy. The results showed that the two algorithms outperformed the heuristic strategy in both experiments.
+\end{abstract}
+
+\tableofcontents
+
+
+\begin{abkuerzungen}[MUSTER] % Das Muster dient zur Bestimmung der Einrueckungstiefe
+\item[RL] Reinforcement Learning
+\item[MDP] Markov-Decision-Process
+\item[MRP] Markov-Reward-Process
+\item[MC] Monte-Carlo
+\item[TD] Temporal-Difference
+\end{abkuerzungen}
+
+
+\startThesis % Befehl muss vor dem ersten chapter stehen (Seitennummerierung!)
+
+
+\input{chapter/Chapter_1_Einleitung}
+\input{chapter/Chapter_2_Reinforcement_Learning}
+\input{chapter/Chapter_3_Environment}
+\input{chapter/Chapter_4_Methodik}
+\input{chapter/Chapter_5_Experiment_1}
+\input{chapter/Chapter_6_Experiment_2}
+\input{chapter/Chapter_7_Diskussion}
+
+\listoffigures
+
+\listoftables
+
+
+
+\bibliography{thesis.bib}
+\bibliographystyle{ieeetr}
+
+\newpage
+
+\input{chapter/Anhang}
+\begin{appendix}
+
+
+\chapter*{Selbstständigkeitserklärung}
+Ich erkläre hiermit, dass ich diese Thesis selbständig verfasst 
+und keine andern als die angegebenen Quellen benutzt habe. 
+Alle Stellen, die wörtlich oder sinngemäss aus Quellen entnommen wurden, 
+habe ich als solche kenntlich gemacht. Ich versichere zudem, dass ich bisher 
+noch keine wissenschaftliche Arbeit mit gleichem oder ähnlichem Inhalt an der 
+Fernfachhochschule Schweiz oder an einer anderen Hochschule eingereicht habe. 
+Mir ist bekannt, dass andernfalls die Fernfachhochschule Schweiz zum Entzug 
+des aufgrund dieser Thesis verliehenen Titels berechtigt ist.
+
+\vspace{4cm}
+\noindent
+\hrule \ \\[-0.5ex]
+Ort, Datum, Unterschrift
+\end{appendix}
+
+\end{document}
+
+

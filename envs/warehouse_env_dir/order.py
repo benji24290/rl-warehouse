@@ -13,3 +13,6 @@ class Order():
 
     def __str__(self):
         return self.article, ' in ', self.time_to_deliver
+
+    def get_simple_order_state(self):
+        return self.article.get_id()

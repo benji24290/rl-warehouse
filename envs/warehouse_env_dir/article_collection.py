@@ -9,13 +9,12 @@ import random
 
 class ArticleCollection():
     def __init__(self):
-        # TODO dynamic count
         self.articles = []
         self._generate_articles()
 
     def _generate_articles(self):
         self.articles.append(
-            Article(1, 0.1, "Selten"))
+            Article(1, 0.2, "Selten"))
         self.articles.append(
             Article(2, 0.8,  "Häufig"))
         # self.articles.append(

@@ -13,7 +13,6 @@ class Actions():
         action_count = len(self.env.possible_articles.articles)
         for i in range(action_count):
             self.actions_extended.append('ORDER_'+str(i+1))
-        print(self.actions_extended)
         self.actions_with_idle = ['STORE', 'DELIVER',
                                   'ORDER',  'IDLE']
         self.action_reward = 0
@@ -21,23 +20,22 @@ class Actions():
     def store(self, article_id, storage_pos=None):
         if storage_pos is None:
             storage_pos = self.store_oracle()
-        if(storage_pos is not None and self.env.storage.storage_spaces[storage_pos].distance is not None):
+        if(storage_pos is not None and self.env.storage.storage_spaces[storage_pos] is not None):
             article = self.env.arrivals.remove_article_from_arrival(
                 self.env.possible_articles.get_article_by_id(article_id))
             if article is not None:
                 if(self.env.storage.store(article, storage_pos)):
                     log.info('store: ' + article.get_name() +
                              'in storage pos: ', storage_pos)
-                    return 10 * self.env.storage.storage_spaces[storage_pos].distance
+                    return 0
                 log.info('store: space is already used...')
-                return -10 * self.env.storage.storage_spaces[storage_pos].distance
+                return -10
             log.info('store: article not found')
-            return -10 * self.env.storage.storage_spaces[storage_pos].distance
+            return -10
         log.info('store: storage space not found')
         return 0  # storage space
 
     def deliver(self, article_id):
-        # TODO deliver with oracle
         article = self.env.possible_articles.get_article_by_id(article_id)
         if self.env.requests.deliver_article(article):
             log.info('deliver:', article, 'was delivered')
@@ -46,11 +44,11 @@ class Actions():
         return -100
 
     def order(self, article_id):
-        self.env.orders.new_order(
+        rew = self.env.orders.new_order(
             self.env.possible_articles.get_article_by_id(article_id))
         log.info('order:', 'order, now there ',
                  len(self.env.orders.orders), ' orders')
-        return 0
+        return rew
 
     def do_action(self, action, article_id=None):
         '''Performs specified action, if article_id is None a random id will be generated. Does not return anything, the reward will be added to the env.reward'''
@@ -68,7 +66,7 @@ class Actions():
             self.env.rewards.add_reward_action_store(self.store(article_id))
         elif action == 'DELIVER':
             self.env.rewards.add_reward_action_deliver(
-                self.deliver(article_id))
+                self.deliver(self.deliver_oracle()))
         elif action == 'ORDER':
             self.env.rewards.add_reward_action_order(self.order(article_id))
             # TODO Remove and make dynamic
@@ -95,11 +93,22 @@ class Actions():
         return random.choice(self.actions_with_idle)
 
     def store_oracle(self):
-        # TODO make store oracle inteligent
         possible = self.env.storage.get_possible_spaces()
         if(len(possible) > 0):
             return random.choice(possible)
         return None
+
+    def deliver_oracle(self):
+        a_id = None
+        for req in self.env.requests.requests:
+            if(a_id != None):
+                break
+            for space in self.env.storage.storage_spaces:
+                if(a_id != None):
+                    break
+                if req.article == space.article:
+                    a_id = req.article.id
+        return a_id
 
 #    def arrival_oracle(self):
 #        # random choice of possible?

@@ -15,7 +15,6 @@ class Requests():
         self.requests = []
 
     def deliver_article(self, article):
-        # TODO every request has same
         if article is not None:
             for space in self.env.storage.storage_spaces:
                 if space.article == article:

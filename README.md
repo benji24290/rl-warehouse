@@ -4,22 +4,18 @@ Reinforcement Learning Warehouse
 
 ## Install Requirements
 
-run:
+Run the following command to install all the dependencies:
 
 ```
 pip install -e .
 ```
 
-## Test Env
+## Start Experiment
 
-C:\Users\benji\Desktop\BT\reinforcement-learning-warehouse> python  
-Python 3.7.1 (v3.7.1:260ec2c36a, Oct 20 2018, 14:57:15) [MSC v.1915 64 bit (AMD64)] on win32
-Type "help", "copyright", "credits" or "license" for more information.
+The experiment will be startet with the following command:
 
-```python
-import gym
-import envs
-env = gym.make('Warehouse-v0')
+```
+python envs/warehouse_env_dir/__init__.py
 ```
 
-Env initialized seed: 2295247526796136724
+The environment settings and algorithm parameters can be adjustet in `envs/warehouse_env_dir/__init__.py` and the rewards can be adjusted in `envs/warehouse_env_dir/consts.py`

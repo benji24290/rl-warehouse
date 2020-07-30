@@ -1,8 +1,5 @@
 class StorageSpace():
-    def __init__(self, distance, article=None):
-        # the distance
-        # int [1,2,3]
-        self.distance = distance
+    def __init__(self, article=None):
         # the stored article
         # Article
         self.article = article
@@ -16,7 +13,7 @@ class StorageSpace():
     def get_storage_space_state(self):
         if self.article == None:
             return 0
-        return [self.article.get_id(), self.distance]
+        return [self.article.get_id()]
 
     def get_simple_storage_space_state(self):
         if self.article == None:
