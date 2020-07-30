@@ -36,7 +36,6 @@ class Actions():
         return 0  # storage space
 
     def deliver(self, article_id):
-        # TODO deliver with oracle
         article = self.env.possible_articles.get_article_by_id(article_id)
         if self.env.requests.deliver_article(article):
             log.info('deliver:', article, 'was delivered')

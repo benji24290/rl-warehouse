@@ -25,7 +25,7 @@ eps_decay_factor = 0.999
 eps_min = 0.05
 
 num_episodes = 50000
-train_episodes = 800000
+train_episodes = 8000
 alpha = 0.5
 gamma = 0.9
 
@@ -48,8 +48,8 @@ best_alpha_sarsa = 0.1
 best_gamma_sarsa = 0.9
 
 # To deisable sections of this experiment
-evaluate_params = False
-train = False
+evaluate_params = True
+train = True
 compare_policies = True  # train also needs to be true
 
 
@@ -106,32 +106,6 @@ if __name__ == '__main__':
         plt.legend()
         plt.show()
 
-        '''
-        # Plot visited
-        plt.xlabel('Steps')
-        plt.ylabel('Besuchte S,A Paare')
-        # should not be in same graph and should be log
-        window_visited = results_sarsa.plot_visited_s_a(
-            label='Sarsa', std=False)
-        results_q_learning.plot_visited_s_a(
-            label='Q-Learning', std=False)
-        plt.title('Besuchte S,A - Window=' +
-                  str(window_visited))
-        plt.legend()
-        plt.show()
-
-        plt.xlabel('Steps')
-        plt.ylabel('Epsilon')
-        window_epsilon = results_q_learning.plot_epsilons(
-            label='Q-Learning',  std=False)
-        results_sarsa.plot_epsilons(
-            label='Sarsa',  std=False)
-
-        plt.title('Epsilon-Decay - Window=' +
-                  str(window_epsilon))
-        plt.legend()
-        plt.show()
-        '''
         results_q_learning.plot_exploration_both(
             other_eps=results_sarsa.epsilons, other_visited=results_sarsa.visited_states)
 

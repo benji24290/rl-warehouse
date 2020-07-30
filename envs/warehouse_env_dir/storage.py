@@ -16,13 +16,8 @@ class Storage():
 
     def _init_spaces(self, count):
         # generates all the storage spaces, the distance is equal to n
-        # TODO maybe diastance  %3
         for i in range(count):
             self.storage_spaces.append(StorageSpace())
-
-    def get_possible_space(self):
-        # TODO return random possible space
-        pass
 
     def get_possible_spaces(self):
         '''Returns the index of all the possible spaces'''

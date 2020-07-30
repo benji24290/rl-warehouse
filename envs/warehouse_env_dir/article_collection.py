@@ -9,7 +9,6 @@ import random
 
 class ArticleCollection():
     def __init__(self):
-        # TODO dynamic count
         self.articles = []
         self._generate_articles()
 
