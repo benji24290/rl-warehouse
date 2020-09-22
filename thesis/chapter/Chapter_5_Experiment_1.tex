@@ -61,7 +61,10 @@ Der Discount-Factor $\gamma$ definiert, wie stark zukünftige Rewards gewertet w
 \end{table}%
 
 \subsection{Lernrate}
-Die Lernrate $\alpha$ definiert, wie schnell die Q-Values auf neue Erkenntnisse angepasst werden. Ein Wert von 0 bedeutet, es wird nichts dazugelernt, und der Wert 1 heisst, dass der komplette TD-Error ausgeglichen wird. Folgende Lernraten werden überprüft:
+Die Lernrate $\alpha$ definiert, wie schnell 
+die Q-Values auf neue Erkenntnisse
+angepasst werden. Ein Wert von 0 
+bedeutet, es wird nichts dazugelernt, und der Wert 1 heisst, dass der komplette TD-Error ausgeglichen wird. Folgende Lernraten werden überprüft:
 \begin{table}[H]%
 \begin{tabularx}{\textwidth} { 
   | >{\raggedright\arraybackslash}X 
@@ -226,14 +229,14 @@ Wie in Abbildung \ref{fig:e1-pol-q} erkennbar, hat die Q-Learning-Policy versuch
 
 \begin{figure}[H]
   \centering
-  \includegraphics[height=5.5cm]{img/plots/exp-1/heu-rew-state.png}
+  \includegraphics[height=5.5cm]{img/plots/exp-1/q-rew-state.png}
   \caption{Experiment 1 – Rewards und States aus einer Episode Q-Learning}
     \label{fig:e1-pol-q}
 \end{figure}
 Sarsa hingegen hat gelernt, dass nur zu Beginn zwei Bestellungen nacheinander vorkommen und bestellt diese demensprechend (Abbildung \ref{fig:e1-pol-sarsa}). Dieses Vorgehen entspricht einem Overfitting, was in diesem Fall das Auswendiglernen einer bestimmten Sequenz bedeutet. Da das Environment aber immer gleich bleibt und keine zufälligen Abläufe stattfinden, ist das in diesem Fall die beste Policy.
 \begin{figure}[H]
   \centering
-  \includegraphics[height=5.5cm]{img/plots/exp-1/heu-rew-state.png}
+  \includegraphics[height=5.5cm]{img/plots/exp-1/sarsa-rew-state.png}
   \caption{Experiment 1 – Rewards und States aus einer Episode Sarsa}
     \label{fig:e1-pol-sarsa}
 \end{figure}
